@@ -5,10 +5,10 @@ import LZString from 'lz-string';
 import { QRCodeCanvas } from 'qrcode.react';
 import { AppHeader } from './components/AppHeader';
 import { ComparisonPanel } from './components/ComparisonPanel';
-import { GroupTabs } from './components/GroupTabs';
 import { GroupWorkspace } from './components/GroupWorkspace';
 import { Notebook } from './components/Notebook';
 import { ModalDialog } from './components/ModalDialog';
+import { NotebookGrid } from './components/NotebookGrid';
 import type { AppMode, Group, GroupPage, ItemOrigin, ItemOriginType, ListItem } from './lib/notebook-types';
 import { PAGE_ITEM_CAPACITY } from './lib/workspace-constants';
 
@@ -678,6 +678,7 @@ export default function App() {
   const [myId, setMyId] = useState<string>('local');
   const [groups, setGroups] = useState<Group[]>([createDefaultGroup()]);
   const [activeGroupId, setActiveGroupId] = useState<string>(DEFAULT_GROUP_ID);
+  const [viewMode, setViewMode] = useState<'grid' | 'detail'>('grid');
   const [myTicks, setMyTicks] = useState<Record<string, boolean>>({});
   const [boundPages, setBoundPages] = useState<Record<string, boolean>>({});
   const [extraPageCounts, setExtraPageCounts] = useState<Record<string, number>>({});
@@ -836,6 +837,20 @@ export default function App() {
     setSharedTicks({});
     window.history.replaceState({}, '', window.location.pathname);
   };
+  
+  const openGroup = (group: Group) => {
+    setActiveGroupId(group.id);
+    setViewMode('detail');
+    setMode('edit');
+    setSharedTicks({});
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.history.replaceState({}, '', window.location.pathname);
+  };
+
+  const backToGrid = () => {
+    setViewMode('grid');
+    // window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const createGroup = () => {
     const newGroup: Group = {
@@ -843,12 +858,9 @@ export default function App() {
       title: `第 ${groups.length + 1} 组`,
       items: [],
     };
-    setGroups((prev) => [...prev, newGroup]);
-    setActiveGroupId(newGroup.id);
     setNextGroupId((prev) => prev + 1);
-    setMode('edit');
-    setSharedTicks({});
-    setNewItemText('');
+    setGroups((prev) => [...prev, newGroup]);
+    openGroup(newGroup); // Switch to the new group
     setEditingGroupId(newGroup.id);
     setGroupTitleDraft(newGroup.title);
   };
@@ -1023,6 +1035,7 @@ export default function App() {
 
     setGroups(nextGroups);
     setActiveGroupId(fallbackGroup.id);
+    setViewMode('grid'); // Reset to grid after delete
     setMyTicks((prev) => {
       const next = { ...prev };
       activeGroup.items.forEach((item) => {
@@ -1084,54 +1097,82 @@ export default function App() {
           onCopy={copyToClipboard}
           onReset={() => setShowResetConfirm(true)}
           onShowQrCode={() => setShowQrCode(true)}
+          isDetailView={viewMode === 'detail'}
+          onBackToGrid={backToGrid}
         />
 
-        <GroupTabs
-          activeGroupId={activeGroupId}
-          groups={groups}
-          mode={mode}
-          onCreateGroup={createGroup}
-          onSelectGroup={selectGroup}
-        />
-
-        <LayoutGroup id={`page-stacks-${activeGroupId}`}>
-          <AnimatePresence mode="wait">
-            {mode === 'compare-result' && comparison ? (
-              <ComparisonPanel comparison={comparison} group={activeGroup} />
-            ) : (
-            <GroupWorkspace
-              activeGroup={activeGroup}
-              activeGroupPages={stackPages}
-              boundPageCount={lowerStackPages.length}
-              editingGroupId={editingGroupId}
-              groupTitleDraft={groupTitleDraft}
-              mode={mode}
-              newItemText={newItemText}
-              pageSize={PAGE_SIZE}
-              paperRef={paperRef}
-              ticks={myTicks}
-              onAddItem={addItem}
-              onAppendPage={appendEmptyPage}
-              onBindPage={movePageToLowerStack}
-                onDeleteGroup={() => setShowDeleteGroupConfirm(true)}
-                onDraftChange={setGroupTitleDraft}
-                onItemTextChange={setNewItemText}
-                onRemoveItem={removeItem}
-                onRenameCancel={cancelRenameGroup}
-                onRenameSave={saveGroupTitle}
-                onRenameStart={startRenameGroup}
-                onToggleTick={toggleTick}
+        <AnimatePresence>
+        {viewMode === 'grid' ? (
+          <motion.div
+            key="grid"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+             exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
+          >
+              <div className="flex justify-end mb-4 px-8">
+                  <button 
+                    onClick={createGroup}
+                    className="px-6 py-2 bg-neutral-900 text-white rounded-full font-medium shadow-md hover:bg-black transition-all"
+                  >
+                      + New Notebook
+                  </button>
+              </div>
+              <NotebookGrid
+                groups={groups}
+                ticks={myTicks}
+                onSelectGroup={(group) => openGroup(group)}
               />
-            )}
+          </motion.div>
+        ) : (
+          <motion.div
+            key="detail"
+            initial={{ opacity: 0 }}
+             animate={{ opacity: 1 }}
+             exit={{ opacity: 0 }}
+          >
+        
+          <AnimatePresence mode="wait">
+             {mode === 'compare-result' && comparison ? (
+                 <ComparisonPanel comparison={comparison} group={activeGroup} />
+             ) : (
+                 <GroupWorkspace
+                     key={activeGroup.id}
+                     activeGroup={activeGroup}
+                     activeGroupPages={stackPages}
+                     boundPageCount={lowerStackPages.length}
+                     editingGroupId={editingGroupId}
+                     groupTitleDraft={groupTitleDraft}
+                     mode={mode}
+                     newItemText={newItemText}
+                     pageSize={PAGE_SIZE}
+                     paperRef={paperRef}
+                     ticks={myTicks}
+                     onAddItem={addItem}
+                     onAppendPage={appendEmptyPage}
+                     onBindPage={movePageToLowerStack}
+                     onDeleteGroup={() => setShowDeleteGroupConfirm(true)}
+                     onDraftChange={setGroupTitleDraft}
+                     onItemTextChange={setNewItemText}
+                     onRemoveItem={removeItem}
+                     onRenameCancel={cancelRenameGroup}
+                     onRenameSave={saveGroupTitle}
+                     onRenameStart={startRenameGroup}
+                     onToggleTick={toggleTick}
+                 />
+             )}
           </AnimatePresence>
 
-          <Notebook
-            pages={lowerStackPages}
-            ticks={myTicks}
-            onRemoveItem={removeItem}
-            onToggleTick={toggleTick}
-          />
-        </LayoutGroup>
+            <Notebook
+              key={activeGroup.id}
+              pages={lowerStackPages}
+              ticks={myTicks}
+              onRemoveItem={removeItem}
+              onToggleTick={toggleTick}
+            />
+
+        </motion.div>
+        )}
+        </AnimatePresence>
 
         <footer className="mt-10 flex flex-col items-center">
           {mode === 'compare-step-1' && (

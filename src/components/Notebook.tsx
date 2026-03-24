@@ -20,7 +20,7 @@ function NotebookSpine({ height = 600 }: { height?: number }) {
   const count = Math.floor(height / LINE_HEIGHT);
   
   return (
-    <div className="absolute left-1/2 top-14 w-12 -translate-x-1/2 z-[100] flex flex-col pointer-events-none select-none">
+    <div className="absolute left-1/2 top-0 w-12 -translate-x-1/2 z-[100] flex flex-col pointer-events-none select-none">
       {Array.from({ length: count }).map((_, i) => (
         <div key={i} className="relative w-full flex items-center justify-center" style={{ height: `${LINE_HEIGHT}px` }}>
             <div className="h-4 w-16 bg-gradient-to-r from-neutral-400 via-neutral-100 to-neutral-400 rounded-full shadow-sm transform -rotate-2 border border-neutral-300" />
@@ -125,48 +125,39 @@ export function Notebook({
   };
 
   return (
-    <div className="mt-10">
-      <div className="mb-4 px-2">
-        <div className="ui-label">Lower Stack</div>
-        <div className="ui-mono opacity-45">上面的 page 完成后，会直接移动到下面这个 stack。</div>
-      </div>
-      <div className="relative overflow-visible rounded-[32px] border border-neutral-200/80 bg-white/78 px-6 pb-8 pt-6 shadow-[0_30px_65px_rgba(0,47,167,0.08)] backdrop-blur-sm">
-        <div className="mb-5 flex items-center justify-between gap-4">
-          <div>
-            <div className="list-text">Moved Pages</div>
-            <div className="ui-mono opacity-45">{pages.length} pages moved here</div>
-          </div>
-          {allPages.length > 1 && (
-            <div className="relative z-[3] flex gap-2.5">
-              <motion.button
-                whileHover={{ y: -1 }}
-                whileTap={{ scale: 0.98 }}
+    <motion.div 
+      className="relative flex min-h-[700px] w-full items-start justify-center perspective-[2000px] mt-10"
+      initial={{ opacity: 0, scale: 0.9, y: -200 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.9, y: -200 }}
+      transition={{ type: 'spring', stiffness: 100, damping: 20 }}
+    >
+        {allPages.length > 1 && (
+            <>
+              <button
                 type="button"
                 onClick={goPrevPage}
                 disabled={!canGoPrev}
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-neutral-200 bg-white text-[#666] transition-all hover:-translate-y-px hover:border-klein hover:text-klein disabled:cursor-not-allowed disabled:opacity-35"
+                className="absolute left-4 top-[300px] z-50 flex h-12 w-12 items-center justify-center rounded-full border border-neutral-200 bg-white/80 text-[#666] shadow-[0_8px_16px_rgba(0,0,0,0.06)] backdrop-blur-sm transition-all hover:-translate-y-px hover:border-klein hover:text-klein disabled:cursor-not-allowed disabled:opacity-35"
                 title="Previous page"
               >
-                <ArrowLeft size={16} />
-              </motion.button>
-              <motion.button
-                whileHover={{ y: -1 }}
-                whileTap={{ scale: 0.98 }}
+                <ArrowLeft size={20} />
+              </button>
+              <button
                 type="button"
                 onClick={goNextPage}
                 disabled={!canGoNext}
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-neutral-200 bg-white text-[#666] transition-all hover:-translate-y-px hover:border-klein hover:text-klein disabled:cursor-not-allowed disabled:opacity-35"
+                className="absolute right-4 top-[300px] z-50 flex h-12 w-12 items-center justify-center rounded-full border border-neutral-200 bg-white/80 text-[#666] shadow-[0_8px_16px_rgba(0,0,0,0.06)] backdrop-blur-sm transition-all hover:-translate-y-px hover:border-klein hover:text-klein disabled:cursor-not-allowed disabled:opacity-35"
                 title="Next page"
               >
-                <ArrowRight size={16} />
-              </motion.button>
-            </div>
+                <ArrowRight size={20} />
+              </button>
+            </>
           )}
-        </div>
-        <div className="relative min-h-[720px] overflow-visible rounded-[28px] bg-neutral-100/50 shadow-inner px-4 py-14 border border-neutral-200/50">
+
           <NotebookSpine />
           
-          <div className="relative min-h-[620px] perspective-[2000px]">
+          <div className="relative w-full h-[620px] max-w-[500px] perspective-[2000px]">
               {allPages.map((page, index) => {
                 const distanceFromFocus = index - safeFocusedPageIndex;
                 const isPast = distanceFromFocus < 0;
@@ -184,6 +175,7 @@ export function Notebook({
                 return (
                   <motion.div
                     key={page.key}
+                    
                     className="absolute left-1/2 top-0 cursor-pointer border-none bg-transparent p-0 text-left"
                     style={{
                       width: `${PAGE_CARD_WIDTH_PX}px`,
@@ -258,8 +250,6 @@ export function Notebook({
                 );
               })}
             </div>
-        </div>
-      </div>
-    </div>
+    </motion.div>
   );
 }
