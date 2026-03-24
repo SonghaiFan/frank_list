@@ -132,11 +132,17 @@ export function Notebook({
 
   return (
     <motion.div 
+      layout
       className="relative flex min-h-[700px] w-full items-start justify-center perspective-[2000px] mt-10"
       initial={{ opacity: 0, scale: 0.9, y: -200 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.9, y: -200 }}
-      transition={{ type: 'spring', stiffness: 100, damping: 20 }}
+      transition={{
+        type: 'spring',
+        stiffness: 100,
+        damping: 20,
+        layout: { type: 'spring', stiffness: 210, damping: 28 },
+      }}
     >
         {!closed && allPages.length > 1 && (
             <>

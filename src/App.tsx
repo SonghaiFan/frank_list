@@ -1098,53 +1098,67 @@ export default function App() {
              exit={{ opacity: 0 }}
           >
         
-          <AnimatePresence mode="wait">
-             {mode === 'compare-result' && comparison ? (
-                 <ComparisonPanel comparison={comparison} group={activeGroup} />
-             ) : !isGalleryClosed ? (
-                 <GroupWorkspace
-                     key={activeGroup.id}
-                     activeGroup={activeGroup}
-                     activeGroupPages={stackPages}
-                     boundPageCount={lowerStackPages.length}
-                     editingGroupId={editingGroupId}
-                     groupTitleDraft={groupTitleDraft}
-                     mode={mode}
-                     newItemText={newItemText}
-                     pageSize={PAGE_SIZE}
-                     paperRef={paperRef}
-                     ticks={myTicks}
-                     onAddItem={addItem}
-                     onAppendPage={appendEmptyPage}
-                     onBindPage={movePageToLowerStack}
-                     onDeleteGroup={() => setShowDeleteGroupConfirm(true)}
-                     onDraftChange={setGroupTitleDraft}
-                     onItemTextChange={setNewItemText}
-                     onRemoveItem={removeItem}
-                     onRenameCancel={cancelRenameGroup}
-                     onRenameSave={saveGroupTitle}
-                     onRenameStart={startRenameGroup}
-                     onToggleTick={toggleTick}
-                 />
-             ) : (
-                 <motion.div
-                   key={`closed-gallery-${activeGroup.id}`}
-                   initial={{ opacity: 0, y: 20 }}
-                   animate={{ opacity: 1, y: 0 }}
-                   exit={{ opacity: 0, y: 20 }}
-                   className="pb-2"
-                 />
-             )}
-          </AnimatePresence>
+          <LayoutGroup id={`workspace-notebook-${activeGroup.id}`}>
+            <motion.div
+              layout
+              transition={{ layout: { type: 'spring', stiffness: 210, damping: 28 } }}
+            >
+              <AnimatePresence mode="sync">
+                {mode === 'compare-result' && comparison ? (
+                  <ComparisonPanel comparison={comparison} group={activeGroup} />
+                ) : !isGalleryClosed ? (
+                  <GroupWorkspace
+                    key={activeGroup.id}
+                    activeGroup={activeGroup}
+                    activeGroupPages={stackPages}
+                    boundPageCount={lowerStackPages.length}
+                    editingGroupId={editingGroupId}
+                    groupTitleDraft={groupTitleDraft}
+                    mode={mode}
+                    newItemText={newItemText}
+                    pageSize={PAGE_SIZE}
+                    paperRef={paperRef}
+                    ticks={myTicks}
+                    onAddItem={addItem}
+                    onAppendPage={appendEmptyPage}
+                    onBindPage={movePageToLowerStack}
+                    onDeleteGroup={() => setShowDeleteGroupConfirm(true)}
+                    onDraftChange={setGroupTitleDraft}
+                    onItemTextChange={setNewItemText}
+                    onRemoveItem={removeItem}
+                    onRenameCancel={cancelRenameGroup}
+                    onRenameSave={saveGroupTitle}
+                    onRenameStart={startRenameGroup}
+                    onToggleTick={toggleTick}
+                  />
+                ) : (
+                  <motion.div
+                    key={`closed-gallery-${activeGroup.id}`}
+                    layout
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 20 }}
+                    transition={{ layout: { type: 'spring', stiffness: 210, damping: 28 } }}
+                    className="pb-2"
+                  />
+                )}
+              </AnimatePresence>
+            </motion.div>
 
-            <Notebook
-              key={activeGroup.id}
-              closed={isGalleryClosed}
-              pages={notebookPages}
-              ticks={myTicks}
-              onRemoveItem={removeItem}
-              onToggleTick={toggleTick}
-            />
+            <motion.div
+              layout
+              transition={{ layout: { type: 'spring', stiffness: 210, damping: 28 } }}
+            >
+              <Notebook
+                key={activeGroup.id}
+                closed={isGalleryClosed}
+                pages={notebookPages}
+                ticks={myTicks}
+                onRemoveItem={removeItem}
+                onToggleTick={toggleTick}
+              />
+            </motion.div>
+          </LayoutGroup>
 
         </motion.div>
         </AnimatePresence>

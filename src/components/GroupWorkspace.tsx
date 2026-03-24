@@ -53,10 +53,16 @@ export function GroupWorkspace({
 }: GroupWorkspaceProps) {
   return (
     <motion.div
+      layout
       initial={{ opacity: 0, scale: 0.9, y: 200 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.9, y: 200, transition: { duration: 0.2 } }}
-      transition={{ type: 'spring', stiffness: 200, damping: 25 }}
+      transition={{
+        type: 'spring',
+        stiffness: 200,
+        damping: 25,
+        layout: { type: 'spring', stiffness: 210, damping: 28 },
+      }}
     >
 
 
