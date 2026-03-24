@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Share2, Copy, Check, Plus, Trash2, ArrowLeft, Users, Heart, Info, X, QrCode, RotateCcw } from 'lucide-react';
+import { Share2, Check, Plus, ArrowLeft, Users, X, QrCode, RotateCcw, Trash2 } from 'lucide-react';
 import LZString from 'lz-string';
 import { QRCodeCanvas } from 'qrcode.react';
 import { clsx, type ClassValue } from 'clsx';
@@ -10,7 +10,6 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-// Default bucket list items
 const DEFAULT_ITEMS = [
   "送礼物", "被送礼物", "暗恋", "明恋", "失恋", "表白", "被表白",
   "留长发", "剪短发", "染发", "漂发", "烫发", "化妆", "做美甲",
@@ -29,21 +28,79 @@ const DEFAULT_ITEMS = [
   "学一种语言", "写论文", "写书", "写诗", "写日记", "写剧本", "写歌", "拍影片"
 ];
 
-// Helper to generate a consistent color from a string ID
-const getColorFromId = (id: string) => {
-  if (!id || id === 'local') return 'bg-neutral-200';
-  const colors = [
-    'bg-red-400', 'bg-orange-400', 'bg-amber-400', 'bg-yellow-400', 
-    'bg-lime-400', 'bg-green-400', 'bg-emerald-400', 'bg-teal-400', 
-    'bg-cyan-400', 'bg-sky-400', 'bg-blue-400', 'bg-indigo-400', 
-    'bg-violet-400', 'bg-purple-400', 'bg-fuchsia-400', 'bg-pink-400', 'bg-rose-400'
-  ];
-  let hash = 0;
-  for (let i = 0; i < id.length; i++) {
-    hash = id.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return colors[Math.abs(hash) % colors.length];
-};
+const DEFAULT_GROUP_ID = '0';
+const DEFAULT_GROUP_TITLE = '人生清单100项';
+const LOCAL_STATE_STORAGE_KEY = 'rams-life-state';
+const ID_ALPHABET = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const BIT_ALPHABET = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_';
+const TOP_SEP = '\u0001';
+const GROUP_SEP = '\u0002';
+const GROUP_FIELD_SEP = '\u0003';
+const ITEM_SEP = '\u0004';
+const ITEM_FIELD_SEP = '\u0005';
+const ESCAPE_CHAR = '\\';
+
+type ItemOriginType = 'default' | 'self' | 'external';
+
+interface ItemOrigin {
+  type: ItemOriginType;
+  ownerId?: string;
+}
+
+interface ListItem {
+  id: string;
+  text: string;
+  origin: ItemOrigin;
+}
+
+interface Group {
+  id: string;
+  title: string;
+  items: ListItem[];
+}
+
+interface PersistedAppState {
+  v: number;
+  groups: Group[];
+  ticks: Record<string, boolean>;
+  activeGroupId: string;
+  nextGroupId: number;
+  nextItemId: number;
+}
+
+type CompactLocalItem = number | [string, string] | [string, string, string];
+
+interface CompactLocalGroup {
+  id: string;
+  n: string;
+  i: CompactLocalItem[];
+  t: string;
+}
+
+interface CompactLocalState {
+  v: number;
+  a: string;
+  c: [string, string];
+  g: CompactLocalGroup[];
+}
+
+interface SharedGroupData {
+  v: number;
+  o: string;
+  g: string;
+  n: string;
+  i: (number | [number, number] | [string, string])[];
+  t: string;
+}
+
+interface ImportedGroupPayload {
+  group: Group;
+  sharedTicks: Record<string, boolean>;
+}
+
+interface ConfettiHandle {
+  spawn: (x: number, y: number) => void;
+}
 
 const getHashFromString = (value: string) => {
   let hash = 0;
@@ -72,265 +129,770 @@ const getMarkerStyle = (text: string): React.CSSProperties => {
   };
 };
 
-const DEFAULT_ITEMS_INDEX_MAP = Object.fromEntries(DEFAULT_ITEMS.map((item, idx) => [item, idx]));
+const createDefaultItem = (text: string, index: number): ListItem => ({
+  id: `_${index.toString(36)}`,
+  text,
+  origin: { type: 'default' },
+});
 
-// Compact data structure for sharing
-interface CompactListData {
-  v: number; // version
-  o: string; // ownerId
-  i: (number | [number, number] | string)[]; // items (index, range [start, end], or custom string)
-  t: string; // ticks as bitmask string "1010..."
-}
+const DEFAULT_ITEM_RECORDS = DEFAULT_ITEMS.map((text, index) => createDefaultItem(text, index));
+const DEFAULT_ITEM_INDEX_BY_TEXT = Object.fromEntries(DEFAULT_ITEMS.map((item, idx) => [item, idx]));
+const DEFAULT_ITEM_INDEX_BY_ID = Object.fromEntries(DEFAULT_ITEM_RECORDS.map((item, idx) => [item.id, idx]));
 
-const compressList = (items: string[], ticks: Record<string, boolean>, ownerId: string): CompactListData => {
-  const compressedItems: (number | [number, number] | string)[] = [];
-  let rangeStart = -1;
-  let lastIdx = -1;
+const randomId = (length = 4) => {
+  if (typeof crypto !== 'undefined' && 'getRandomValues' in crypto) {
+    const bytes = crypto.getRandomValues(new Uint8Array(length));
+    return Array.from(bytes, (byte) => ID_ALPHABET[byte % ID_ALPHABET.length]).join('');
+  }
+  return Math.random().toString(36).slice(2, 2 + length);
+};
 
-  const flushRange = () => {
-    if (rangeStart !== -1) {
-      if (rangeStart === lastIdx) {
-        compressedItems.push(rangeStart);
-      } else {
-        compressedItems.push([rangeStart, lastIdx]);
-      }
-      rangeStart = -1;
+const createOwnedId = (ownerId: string, index: number) => `${ownerId}.${index.toString(36)}`;
+
+const getOwnerIdFromScopedId = (id: string) => {
+  const separatorIndex = id.indexOf('.');
+  return separatorIndex === -1 ? null : id.slice(0, separatorIndex);
+};
+
+const packBits = (bits: boolean[]) => {
+  let packed = '';
+  for (let index = 0; index < bits.length; index += 6) {
+    let value = 0;
+    for (let offset = 0; offset < 6; offset += 1) {
+      if (bits[index + offset]) value |= 1 << offset;
     }
-  };
+    packed += BIT_ALPHABET[value];
+  }
+  return packed;
+};
 
-  items.forEach(item => {
-    const idx = DEFAULT_ITEMS_INDEX_MAP[item];
-    if (idx !== undefined) {
-      if (rangeStart === -1) {
-        rangeStart = idx;
-        lastIdx = idx;
-      } else if (idx === lastIdx + 1) {
-        lastIdx = idx;
-      } else {
-        flushRange();
-        rangeStart = idx;
-        lastIdx = idx;
-      }
-    } else {
-      flushRange();
-      compressedItems.push(item);
+const unpackBits = (packed: string, count: number) => {
+  const bits = new Array<boolean>(count).fill(false);
+  for (let charIndex = 0; charIndex < packed.length; charIndex += 1) {
+    const value = BIT_ALPHABET.indexOf(packed[charIndex]);
+    if (value < 0) continue;
+    for (let offset = 0; offset < 6; offset += 1) {
+      const bitIndex = charIndex * 6 + offset;
+      if (bitIndex >= count) return bits;
+      bits[bitIndex] = ((value >> offset) & 1) === 1;
     }
+  }
+  return bits;
+};
+
+const escapeCompact = (value: string) =>
+  value.replace(/[\\\u0001\u0002\u0003\u0004\u0005]/g, (char) => `${ESCAPE_CHAR}${char}`);
+
+const splitEscaped = (value: string, separator: string) => {
+  const parts: string[] = [];
+  let current = '';
+  let escaping = false;
+
+  for (const char of value) {
+    if (escaping) {
+      current += char;
+      escaping = false;
+      continue;
+    }
+
+    if (char === ESCAPE_CHAR) {
+      escaping = true;
+      continue;
+    }
+
+    if (char === separator) {
+      parts.push(current);
+      current = '';
+      continue;
+    }
+
+    current += char;
+  }
+
+  parts.push(current);
+  return parts;
+};
+
+const createDefaultGroup = (): Group => ({
+  id: DEFAULT_GROUP_ID,
+  title: DEFAULT_GROUP_TITLE,
+  items: DEFAULT_ITEM_RECORDS.map((item) => ({ ...item, origin: { ...item.origin } })),
+});
+
+const createDefaultState = (): PersistedAppState => ({
+  v: 4,
+  groups: [createDefaultGroup()],
+  ticks: {},
+  activeGroupId: DEFAULT_GROUP_ID,
+  nextGroupId: 1,
+  nextItemId: 0,
+});
+
+const cloneItem = (item: ListItem): ListItem => ({
+  ...item,
+  origin: { ...item.origin },
+});
+
+const cloneGroup = (group: Group): Group => ({
+  ...group,
+  items: group.items.map(cloneItem),
+});
+
+const normalizeOrigin = (origin?: ItemOrigin | string, item?: { id?: string; text: string }): ItemOrigin => {
+  if (origin && typeof origin === 'object' && 'type' in origin) {
+    return origin;
+  }
+
+  if (typeof origin === 'string') {
+    if (origin === 'local') {
+      const isDefault = item?.id ? DEFAULT_ITEM_INDEX_BY_ID[item.id] !== undefined : DEFAULT_ITEM_INDEX_BY_TEXT[item?.text ?? ''] !== undefined;
+      return { type: isDefault ? 'default' : 'self' };
+    }
+    return { type: 'external', ownerId: origin };
+  }
+
+  if (item?.id && DEFAULT_ITEM_INDEX_BY_ID[item.id] !== undefined) return { type: 'default' };
+  if (item?.text && DEFAULT_ITEM_INDEX_BY_TEXT[item.text] !== undefined) return { type: 'default' };
+  return { type: 'self' };
+};
+
+const normalizeItems = (items: Array<ListItem | { id?: string; text: string; origin?: ItemOrigin | string }>) => {
+  return items.map((item, index) => {
+    const fallbackId = DEFAULT_ITEM_INDEX_BY_TEXT[item.text] !== undefined
+      ? `_${DEFAULT_ITEM_INDEX_BY_TEXT[item.text].toString(36)}`
+      : randomId(6);
+    const id = item.id ?? fallbackId;
+    return {
+      id,
+      text: item.text,
+      origin: normalizeOrigin(item.origin, { id, text: item.text }),
+    };
   });
-  flushRange();
+};
 
-  const ticksBitmask = items.map(item => ticks[item] ? '1' : '0').join('');
+const normalizeState = (state?: Partial<PersistedAppState>): PersistedAppState => {
+  const fallback = createDefaultState();
+  const groups = Array.isArray(state?.groups) && state?.groups.length > 0
+    ? state!.groups.map((group, index) => {
+        const groupId = group.id || randomId(6);
+        return {
+          id: groupId,
+          title: groupId === DEFAULT_GROUP_ID ? DEFAULT_GROUP_TITLE : (group.title || `第 ${index + 1} 页`),
+          items: normalizeItems(group.items ?? []),
+        };
+      })
+    : fallback.groups;
+  const activeGroupId = groups.some((group) => group.id === state?.activeGroupId)
+    ? state!.activeGroupId!
+    : groups[0].id;
 
   return {
-    v: 2, // New version
-    o: ownerId,
-    i: compressedItems,
-    t: ticksBitmask
+    v: 4,
+    groups,
+    ticks: state?.ticks ?? {},
+    activeGroupId,
+    nextGroupId: state?.nextGroupId ?? 1,
+    nextItemId: state?.nextItemId ?? 0,
   };
 };
 
-const decompressList = (data: any): ListData => {
-  if (data.v === 2) {
-    const items: string[] = [];
-    data.i.forEach((entry: any) => {
-      if (typeof entry === 'number') {
-        items.push(DEFAULT_ITEMS[entry]);
-      } else if (Array.isArray(entry)) {
-        for (let i = entry[0]; i <= entry[1]; i++) {
-          items.push(DEFAULT_ITEMS[i]);
-        }
-      } else {
-        items.push(entry);
-      }
-    });
-    const ticks = data.t.split('').map((bit: string) => bit === '1');
-    return { items, ticks, ownerId: data.o };
-  }
-  // Backward compatibility for v1 or raw format
-  return data;
+const encodeBase64 = (value: Uint8Array) => {
+  let binary = '';
+  value.forEach((byte) => {
+    binary += String.fromCharCode(byte);
+  });
+  return btoa(binary);
 };
 
-interface ListData {
-  items: string[];
-  ticks: boolean[];
-  ownerId: string;
-}
+const decodeBase64 = (value: string) => {
+  const binary = atob(value);
+  return Uint8Array.from(binary, (char) => char.charCodeAt(0));
+};
 
-interface ConfettiHandle {
-  spawn: (x: number, y: number) => void;
-}
+const getEncryptionKey = async (userId: string) => {
+  const keyMaterial = new TextEncoder().encode(`rams-life-state:${userId}:v3`);
+  const digest = await crypto.subtle.digest('SHA-256', keyMaterial);
+  return crypto.subtle.importKey('raw', digest, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
+};
+
+const compressLocalGroup = (group: Group, ticks: Record<string, boolean>): CompactLocalGroup => {
+  const items: CompactLocalItem[] = [];
+  group.items.forEach((item) => {
+    const defaultIndex = DEFAULT_ITEM_INDEX_BY_ID[item.id];
+    if (item.origin.type === 'default' && defaultIndex !== undefined) {
+      items.push(defaultIndex);
+      return;
+    }
+
+    if (item.origin.type === 'external') {
+      items.push([item.id, item.text, item.origin.ownerId || 'unknown']);
+      return;
+    }
+
+    items.push([item.id, item.text]);
+  });
+
+  return {
+    id: group.id,
+    n: group.title,
+    i: items,
+    t: packBits(group.items.map((item) => !!ticks[item.id])),
+  };
+};
+
+const decompressLocalGroup = (group: CompactLocalGroup) => {
+  const items: ListItem[] = group.i.map((entry) => {
+    if (typeof entry === 'number') {
+      return createDefaultItem(DEFAULT_ITEMS[entry], entry);
+    }
+
+    if (entry.length === 3) {
+      return {
+        id: entry[0],
+        text: entry[1],
+        origin: { type: 'external', ownerId: entry[2] },
+      };
+    }
+
+    return {
+      id: entry[0],
+      text: entry[1],
+      origin: { type: 'self' },
+    };
+  });
+
+  const ticks: Record<string, boolean> = {};
+  const bitset = unpackBits(group.t, items.length);
+  items.forEach((item, index) => {
+    ticks[item.id] = bitset[index];
+  });
+
+  return {
+    group: {
+      id: group.id,
+      title: group.id === DEFAULT_GROUP_ID ? DEFAULT_GROUP_TITLE : group.n,
+      items,
+    },
+    ticks,
+  };
+};
+
+const toCompactLocalState = (state: PersistedAppState): CompactLocalState => ({
+  v: 4,
+  a: state.activeGroupId,
+  c: [state.nextGroupId.toString(36), state.nextItemId.toString(36)],
+  g: state.groups.map((group) => compressLocalGroup(group, state.ticks)),
+});
+
+const serializeCompactLocalItem = (item: CompactLocalItem) => {
+  if (typeof item === 'number') return `d${item.toString(36)}`;
+  if (item.length === 3) return `e${item[0]}${ITEM_FIELD_SEP}${escapeCompact(item[1])}${ITEM_FIELD_SEP}${item[2]}`;
+  return `s${item[0]}${ITEM_FIELD_SEP}${escapeCompact(item[1])}`;
+};
+
+const parseCompactLocalItem = (raw: string): CompactLocalItem => {
+  const type = raw[0];
+  const body = raw.slice(1);
+  if (type === 'd') return parseInt(body, 36);
+  const parts = splitEscaped(body, ITEM_FIELD_SEP);
+  if (type === 'e') return [parts[0], parts[1] ?? '', parts[2] ?? 'unknown'];
+  return [parts[0], parts[1] ?? ''];
+};
+
+const serializeCompactLocalState = (state: CompactLocalState) => {
+  const groups = state.g.map((group) => {
+    const items = group.i.map(serializeCompactLocalItem).join(ITEM_SEP);
+    return [
+      group.id,
+      escapeCompact(group.n),
+      group.t,
+      items,
+    ].join(GROUP_FIELD_SEP);
+  }).join(GROUP_SEP);
+
+  return ['L4', state.a, state.c[0], state.c[1], groups].join(TOP_SEP);
+};
+
+const parseCompactLocalState = (raw: string): CompactLocalState | null => {
+  const [version, activeGroupId, nextGroupId, nextItemId, groupsRaw = ''] = splitEscaped(raw, TOP_SEP);
+  if (version !== 'L4') return null;
+
+  const groups = groupsRaw
+    ? splitEscaped(groupsRaw, GROUP_SEP).filter(Boolean).map((groupRaw) => {
+        const [id, title, ticks, itemsRaw = ''] = splitEscaped(groupRaw, GROUP_FIELD_SEP);
+        return {
+          id,
+          n: title ?? '',
+          t: ticks ?? '',
+          i: itemsRaw ? splitEscaped(itemsRaw, ITEM_SEP).filter(Boolean).map(parseCompactLocalItem) : [],
+        };
+      })
+    : [];
+
+  return {
+    v: 4,
+    a: activeGroupId,
+    c: [nextGroupId ?? '1', nextItemId ?? '0'],
+    g: groups,
+  };
+};
+
+const fromCompactLocalState = (state: CompactLocalState): PersistedAppState => {
+  const groups = state.g.map((group) => decompressLocalGroup(group).group);
+  const ticks = state.g.reduce<Record<string, boolean>>((acc, group) => {
+    Object.assign(acc, decompressLocalGroup(group).ticks);
+    return acc;
+  }, {});
+
+  return normalizeState({
+    v: 4,
+    groups,
+    ticks,
+    activeGroupId: state.a,
+    nextGroupId: parseInt(state.c?.[0] ?? '1', 36),
+    nextItemId: parseInt(state.c?.[1] ?? '0', 36),
+  });
+};
+
+const serializeEncryptedPayload = (iv: Uint8Array, data: Uint8Array) =>
+  ['E4', encodeBase64(iv), encodeBase64(data)].join(TOP_SEP);
+
+const parseEncryptedPayload = (raw: string) => {
+  const [version, iv, data] = splitEscaped(raw, TOP_SEP);
+  if (version !== 'E4' || !iv || !data) return null;
+  return { iv, data };
+};
+
+const encryptState = async (state: PersistedAppState, userId: string) => {
+  const key = await getEncryptionKey(userId);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const compactState = toCompactLocalState(state);
+  const encoded = new TextEncoder().encode(serializeCompactLocalState(compactState));
+  const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, encoded);
+
+  return LZString.compressToEncodedURIComponent(serializeEncryptedPayload(iv, new Uint8Array(encrypted)));
+};
+
+const decryptState = async (value: string, userId: string): Promise<PersistedAppState | null> => {
+  try {
+    const decoded = LZString.decompressFromEncodedURIComponent(value) ?? value;
+    const payload = parseEncryptedPayload(decoded);
+    if (!payload) return null;
+
+    const key = await getEncryptionKey(userId);
+    const decrypted = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: decodeBase64(payload.iv) },
+      key,
+      decodeBase64(payload.data)
+    );
+    const compactState = parseCompactLocalState(new TextDecoder().decode(decrypted));
+    return compactState ? fromCompactLocalState(compactState) : null;
+  } catch (error) {
+    console.error('Failed to decrypt local state', error);
+    return null;
+  }
+};
+
+const compressGroup = (group: Group, ticks: Record<string, boolean>, ownerId: string): SharedGroupData => {
+  const compressedItems: SharedGroupData['i'] = [];
+  let rangeStart = -1;
+  let lastIndex = -1;
+
+  const flushRange = () => {
+    if (rangeStart === -1) return;
+    compressedItems.push(rangeStart === lastIndex ? rangeStart : [rangeStart, lastIndex]);
+    rangeStart = -1;
+  };
+
+  group.items.forEach((item) => {
+    const defaultIndex = DEFAULT_ITEM_INDEX_BY_ID[item.id];
+    if (item.origin.type === 'default' && defaultIndex !== undefined) {
+      if (rangeStart === -1) {
+        rangeStart = defaultIndex;
+        lastIndex = defaultIndex;
+      } else if (defaultIndex === lastIndex + 1) {
+        lastIndex = defaultIndex;
+      } else {
+        flushRange();
+        rangeStart = defaultIndex;
+        lastIndex = defaultIndex;
+      }
+      return;
+    }
+
+    flushRange();
+    compressedItems.push([item.id, item.text]);
+  });
+
+  flushRange();
+
+  return {
+    v: 5,
+    o: ownerId,
+    g: group.id,
+    n: group.title,
+    i: compressedItems,
+    t: packBits(group.items.map((item) => !!ticks[item.id])),
+  };
+};
+
+const serializeSharedItem = (item: SharedGroupData['i'][number]) => {
+  if (typeof item === 'number') return `d${item.toString(36)}`;
+  if (typeof item[0] === 'number' && typeof item[1] === 'number') {
+    return `r${item[0].toString(36)}${ITEM_FIELD_SEP}${item[1].toString(36)}`;
+  }
+  const customItem = item as [string, string];
+  return `c${customItem[0]}${ITEM_FIELD_SEP}${escapeCompact(customItem[1])}`;
+};
+
+const parseSharedItem = (raw: string): SharedGroupData['i'][number] => {
+  const type = raw[0];
+  const body = raw.slice(1);
+  if (type === 'd') return parseInt(body, 36);
+  const parts = splitEscaped(body, ITEM_FIELD_SEP);
+  if (type === 'r') return [parseInt(parts[0], 36), parseInt(parts[1], 36)];
+  return [parts[0], parts[1] ?? ''];
+};
+
+const serializeSharedGroupData = (data: SharedGroupData) => {
+  const items = data.i.map(serializeSharedItem).join(ITEM_SEP);
+  return ['S5', data.o, data.g, escapeCompact(data.n), data.t, items].join(TOP_SEP);
+};
+
+const parseSharedGroupData = (raw: string): SharedGroupData | null => {
+  const [version, ownerId, groupId, name, ticks, itemsRaw = ''] = splitEscaped(raw, TOP_SEP);
+  if (version !== 'S5') return null;
+  return {
+    v: 5,
+    o: ownerId,
+    g: groupId,
+    n: name ?? '',
+    t: ticks ?? '',
+    i: itemsRaw ? splitEscaped(itemsRaw, ITEM_SEP).filter(Boolean).map(parseSharedItem) : [],
+  };
+};
+
+const decompressSharedGroup = (data: SharedGroupData): ImportedGroupPayload => {
+  const items: ListItem[] = [];
+  data.i.forEach((entry) => {
+    if (typeof entry === 'number') {
+      items.push(createDefaultItem(DEFAULT_ITEMS[entry], entry));
+      return;
+    }
+
+    if (Array.isArray(entry) && typeof entry[0] === 'number' && typeof entry[1] === 'number') {
+      for (let index = entry[0]; index <= entry[1]; index += 1) {
+        items.push(createDefaultItem(DEFAULT_ITEMS[index], index));
+      }
+      return;
+    }
+
+    const customEntry = entry as [string, string];
+    items.push({
+      id: customEntry[0],
+      text: customEntry[1],
+      origin: { type: 'external', ownerId: getOwnerIdFromScopedId(customEntry[0]) || data.o || 'unknown' },
+    });
+  });
+
+  const sharedTicks: Record<string, boolean> = {};
+  const bitset = unpackBits(data.t, items.length);
+  items.forEach((item, index) => {
+    sharedTicks[item.id] = bitset[index];
+  });
+
+  return {
+    group: {
+      id: data.g || createOwnedId(data.o || 'ext', 0),
+      title: data.n || '导入页',
+      items,
+    },
+    sharedTicks,
+  };
+};
+
+const parseSharedPayload = (key: string): ImportedGroupPayload | null => {
+  try {
+    const decoded = LZString.decompressFromEncodedURIComponent(key);
+    if (!decoded) return null;
+    const parsed = parseSharedGroupData(decoded);
+
+    if (!parsed || parsed.v !== 5) return null;
+    return decompressSharedGroup(parsed);
+  } catch (error) {
+    console.error('Failed to decode shared key', error);
+    return null;
+  }
+};
+
+const mergeImportedGroup = (groups: Group[], importedGroup: Group) => {
+  const existingIndex = groups.findIndex((group) => group.id === importedGroup.id);
+  if (existingIndex === -1) {
+    return [...groups, cloneGroup(importedGroup)];
+  }
+
+  const existing = groups[existingIndex];
+  const seen = new Set(existing.items.map((item) => item.id));
+  const mergedItems = [...existing.items];
+
+  importedGroup.items.forEach((item) => {
+    if (!seen.has(item.id)) {
+      mergedItems.push(cloneItem(item));
+      seen.add(item.id);
+    }
+  });
+
+  const nextGroups = [...groups];
+  nextGroups[existingIndex] = {
+    ...existing,
+    title: importedGroup.title || existing.title,
+    items: mergedItems,
+  };
+  return nextGroups;
+};
+
+const getOriginDotClassName = (origin: ItemOrigin) => {
+  switch (origin.type) {
+    case 'self':
+      return 'bg-klein';
+    case 'external':
+      return 'bg-amber-400';
+    case 'default':
+    default:
+      return 'bg-neutral-300';
+  }
+};
+
+const getOriginLabel = (origin: ItemOrigin) => {
+  switch (origin.type) {
+    case 'self':
+      return '自己添加';
+    case 'external':
+      return origin.ownerId ? `外部导入 · ${origin.ownerId}` : '外部导入';
+    case 'default':
+    default:
+      return '默认项目';
+  }
+};
 
 export default function App() {
   const [myId, setMyId] = useState<string>('local');
-  const [items, setItems] = useState<string[]>(DEFAULT_ITEMS);
+  const [groups, setGroups] = useState<Group[]>([createDefaultGroup()]);
+  const [activeGroupId, setActiveGroupId] = useState<string>(DEFAULT_GROUP_ID);
   const [myTicks, setMyTicks] = useState<Record<string, boolean>>({});
-  const [itemOrigins, setItemOrigins] = useState<Record<string, string>>({});
+  const [nextGroupId, setNextGroupId] = useState(1);
+  const [nextItemId, setNextItemId] = useState(0);
   const [sharedTicks, setSharedTicks] = useState<Record<string, boolean>>({});
   const [mode, setMode] = useState<'edit' | 'compare-step-1' | 'compare-result'>('edit');
   const [copySuccess, setCopySuccess] = useState(false);
   const [showQrCode, setShowQrCode] = useState(false);
-  const [newItemText, setNewItemText] = useState(''); 
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [showDeleteGroupConfirm, setShowDeleteGroupConfirm] = useState(false);
+  const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
+  const [groupTitleDraft, setGroupTitleDraft] = useState('');
+  const [newItemText, setNewItemText] = useState('');
+  const [isHydrated, setIsHydrated] = useState(false);
   const confettiRef = useRef<ConfettiHandle | null>(null);
   const paperRef = useRef<HTMLDivElement>(null);
 
-  // Initialize from URL and LocalStorage
+  const activeGroup = useMemo(
+    () => groups.find((group) => group.id === activeGroupId) ?? groups[0] ?? createDefaultGroup(),
+    [activeGroupId, groups]
+  );
+
   useEffect(() => {
-    // 1. Get or generate My Unique ID
-    let localId = localStorage.getItem('rams-user-id');
-    if (!localId) {
-      localId = Math.random().toString(36).substring(2, 15);
-      localStorage.setItem('rams-user-id', localId);
-    }
-    setMyId(localId);
-
-    // 2. Load local items from storage
-    const savedItems = localStorage.getItem('rams-life-items');
-    const savedTicks = localStorage.getItem('rams-life-ticks');
-    const savedOrigins = localStorage.getItem('rams-life-origins');
-    
-    let currentItems = DEFAULT_ITEMS;
-    let currentOrigins: Record<string, string> = {};
-    
-    // Initialize default origins
-    DEFAULT_ITEMS.forEach(item => {
-      currentOrigins[item] = 'local';
-    });
-
-    if (savedItems) {
-      try {
-        currentItems = JSON.parse(savedItems);
-      } catch (e) {
-        console.error("Failed to parse saved items", e);
+    const initialize = async () => {
+      let localId = localStorage.getItem('rams-user-id');
+      if (!localId || localId.length > 6) {
+        localId = randomId(4);
+        localStorage.setItem('rams-user-id', localId);
       }
-    }
-    
-    if (savedOrigins) {
-      try {
-        currentOrigins = { ...currentOrigins, ...JSON.parse(savedOrigins) };
-      } catch (e) {
-        console.error("Failed to parse saved origins", e);
+      setMyId(localId);
+
+      let currentState = createDefaultState();
+      const savedState = localStorage.getItem(LOCAL_STATE_STORAGE_KEY);
+      if (savedState) {
+        const decrypted = await decryptState(savedState, localId);
+        if (decrypted) currentState = decrypted;
       }
-    }
-    
-    setItemOrigins(currentOrigins);
 
-    if (savedTicks) {
-      try {
-        setMyTicks(JSON.parse(savedTicks));
-      } catch (e) {
-        console.error("Failed to parse saved ticks", e);
-      }
-    }
-
-    const params = new URLSearchParams(window.location.search);
-    const key = params.get('key');
-    
-    if (key) {
-      try {
-        const decoded = LZString.decompressFromEncodedURIComponent(key);
-        if (decoded) {
-          const rawData = JSON.parse(decoded);
-          const data = decompressList(rawData);
-          
-          // Merge logic
-          const mergedItems = [...currentItems];
-          const existingSet = new Set(currentItems);
-          const incomingTicksMap: Record<string, boolean> = {};
-          const newOrigins = { ...currentOrigins };
-
-          data.items.forEach((item, idx) => {
-            incomingTicksMap[item] = data.ticks[idx];
-            if (!existingSet.has(item)) {
-              mergedItems.push(item);
-              existingSet.add(item);
-              // Only mark as shared if it's truly new to this user
-              newOrigins[item] = data.ownerId || 'unknown';
-            }
-          });
-
-          setItems(mergedItems);
-          setSharedTicks(incomingTicksMap);
-          setItemOrigins(newOrigins);
+      const params = new URLSearchParams(window.location.search);
+      const key = params.get('key');
+      if (key) {
+        const imported = parseSharedPayload(key);
+        if (imported) {
+          currentState = {
+            ...currentState,
+            groups: mergeImportedGroup(currentState.groups, imported.group),
+            activeGroupId: imported.group.id,
+          };
+          setSharedTicks(imported.sharedTicks);
           setMode('compare-step-1');
         }
-      } catch (e) {
-        console.error("Failed to decode shared key", e);
-        setItems(currentItems);
       }
-    } else {
-      setItems(currentItems);
-    }
+
+      setGroups(currentState.groups);
+      setActiveGroupId(currentState.activeGroupId);
+      setMyTicks(currentState.ticks);
+      setNextGroupId(currentState.nextGroupId);
+      setNextItemId(currentState.nextItemId);
+      setIsHydrated(true);
+    };
+
+    initialize();
   }, []);
 
-  // Persist local changes
   useEffect(() => {
-    // We save whenever items, ticks or origins change to ensure persistence
-    localStorage.setItem('rams-life-items', JSON.stringify(items));
-    localStorage.setItem('rams-life-ticks', JSON.stringify(myTicks));
-    localStorage.setItem('rams-life-origins', JSON.stringify(itemOrigins));
-  }, [items, myTicks, itemOrigins]);
+    if (!isHydrated || !myId) return;
 
-  const toggleTick = (text: string, e?: React.MouseEvent | React.ChangeEvent) => {
-    const isChecking = !myTicks[text];
-    setMyTicks(prev => ({
-      ...prev,
-      [text]: isChecking
-    }));
+    const persist = async () => {
+      const payload = normalizeState({
+        groups,
+        ticks: myTicks,
+        activeGroupId,
+        nextGroupId,
+        nextItemId,
+      });
+      const encrypted = await encryptState(payload, myId);
+      localStorage.setItem(LOCAL_STATE_STORAGE_KEY, encrypted);
+    };
+
+    persist();
+  }, [activeGroupId, groups, isHydrated, myId, myTicks, nextGroupId, nextItemId]);
+
+  const toggleTick = (itemId: string, e?: React.MouseEvent | React.ChangeEvent) => {
+    const isChecking = !myTicks[itemId];
+    setMyTicks((prev) => ({ ...prev, [itemId]: isChecking }));
 
     if (isChecking && e && confettiRef.current && paperRef.current) {
-      // Use screen coordinates directly for full-screen ConfettiPhysics
-      let x, y;
+      let x;
+      let y;
       if ('clientX' in e && e.clientX !== undefined) {
         x = e.clientX;
         y = e.clientY;
       } else {
-        // Fallback for ChangeEvent (keyboard or direct input)
         const targetRect = (e.target as HTMLElement).getBoundingClientRect();
         x = targetRect.left + targetRect.width / 2;
         y = targetRect.top + targetRect.height / 2;
       }
-      
+
       if (!isNaN(x) && !isNaN(y)) {
         confettiRef.current.spawn(x, y);
       }
     }
   };
 
-  const addItem = () => {
-    const text = newItemText.trim();
-    if (text && !items.includes(text)) {
-      setItems([...items, text]);
-      setItemOrigins(prev => ({ ...prev, [text]: 'local' }));
-      setNewItemText('');
-    }
+  const selectGroup = (groupId: string) => {
+    setActiveGroupId(groupId);
+    setMode('edit');
+    setSharedTicks({});
+    window.history.replaceState({}, '', window.location.pathname);
   };
 
-  const removeItem = (text: string) => {
-    setItems(items.filter(item => item !== text));
-    const newTicks = { ...myTicks };
-    delete newTicks[text];
-    setMyTicks(newTicks);
-    
-    const newOrigins = { ...itemOrigins };
-    delete newOrigins[text];
-    setItemOrigins(newOrigins);
+  const createGroup = () => {
+    const newGroup: Group = {
+      id: createOwnedId(myId, nextGroupId),
+      title: `第 ${groups.length + 1} 页`,
+      items: [],
+    };
+    setGroups((prev) => [...prev, newGroup]);
+    setActiveGroupId(newGroup.id);
+    setNextGroupId((prev) => prev + 1);
+    setMode('edit');
+    setSharedTicks({});
+    setNewItemText('');
+    setEditingGroupId(newGroup.id);
+    setGroupTitleDraft(newGroup.title);
+  };
+
+  const startRenameGroup = () => {
+    if (mode !== 'edit') return;
+    setEditingGroupId(activeGroup.id);
+    setGroupTitleDraft(activeGroup.title);
+  };
+
+  const saveGroupTitle = () => {
+    if (!editingGroupId) return;
+    const nextTitle = groupTitleDraft.trim();
+    if (!nextTitle) {
+      setEditingGroupId(null);
+      setGroupTitleDraft('');
+      return;
+    }
+
+    setGroups((prev) =>
+      prev.map((group) =>
+        group.id === editingGroupId
+          ? { ...group, title: nextTitle }
+          : group
+      )
+    );
+    setEditingGroupId(null);
+    setGroupTitleDraft('');
+  };
+
+  const cancelRenameGroup = () => {
+    setEditingGroupId(null);
+    setGroupTitleDraft('');
+  };
+
+  const addItem = () => {
+    const text = newItemText.trim();
+    if (!text) return;
+    if (activeGroup.items.some((item) => item.text === text)) return;
+
+    const newItem: ListItem = {
+      id: createOwnedId(myId, nextItemId),
+      text,
+      origin: { type: 'self' },
+    };
+
+    setGroups((prev) =>
+      prev.map((group) =>
+        group.id === activeGroupId
+          ? { ...group, items: [...group.items, newItem] }
+          : group
+      )
+    );
+    setNextItemId((prev) => prev + 1);
+    setNewItemText('');
+  };
+
+  const removeItem = (itemId: string) => {
+    setGroups((prev) =>
+      prev.map((group) =>
+        group.id === activeGroupId
+          ? { ...group, items: group.items.filter((item) => item.id !== itemId) }
+          : group
+      )
+    );
+    setMyTicks((prev) => {
+      const next = { ...prev };
+      delete next[itemId];
+      return next;
+    });
+    setSharedTicks((prev) => {
+      const next = { ...prev };
+      delete next[itemId];
+      return next;
+    });
   };
 
   const generateShareUrl = () => {
-    const compactData = compressList(items, myTicks, myId);
-    const encoded = LZString.compressToEncodedURIComponent(JSON.stringify(compactData));
+    const payload = compressGroup(activeGroup, myTicks, myId);
+    const encoded = LZString.compressToEncodedURIComponent(serializeSharedGroupData(payload));
     const url = new URL(window.location.href);
     url.searchParams.set('key', encoded);
     return url.toString();
   };
 
   const copyToClipboard = async () => {
-    const url = generateShareUrl();
     try {
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(generateShareUrl());
       setCopySuccess(true);
       setTimeout(() => setCopySuccess(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy!', err);
+    } catch (error) {
+      console.error('Failed to copy!', error);
     }
   };
 
@@ -345,30 +907,62 @@ export default function App() {
   };
 
   const clearAllData = () => {
-    // Removed window.confirm as it doesn't work well in iframes
+    const next = createDefaultState();
     window.history.replaceState({}, '', window.location.pathname);
-    localStorage.removeItem('rams-life-items');
-    localStorage.removeItem('rams-life-ticks');
-    localStorage.removeItem('rams-life-origins');
-    setItems(DEFAULT_ITEMS);
+    localStorage.removeItem(LOCAL_STATE_STORAGE_KEY);
+    setGroups(next.groups);
+    setActiveGroupId(next.activeGroupId);
     setMyTicks({});
+    setNextGroupId(next.nextGroupId);
+    setNextItemId(next.nextItemId);
     setSharedTicks({});
-    setItemOrigins({});
     setMode('edit');
+    setShowResetConfirm(false);
+    setNewItemText('');
   };
 
-  // Comparison logic
+  const deleteActiveGroup = () => {
+    if (activeGroup.id === DEFAULT_GROUP_ID) return;
+
+    const groupIndex = groups.findIndex((group) => group.id === activeGroup.id);
+    const nextGroups = groups.filter((group) => group.id !== activeGroup.id);
+    const fallbackGroup = nextGroups[Math.max(0, groupIndex - 1)] ?? nextGroups[0] ?? createDefaultGroup();
+
+    setGroups(nextGroups);
+    setActiveGroupId(fallbackGroup.id);
+    setMyTicks((prev) => {
+      const next = { ...prev };
+      activeGroup.items.forEach((item) => {
+        delete next[item.id];
+      });
+      return next;
+    });
+    setSharedTicks((prev) => {
+      const next = { ...prev };
+      activeGroup.items.forEach((item) => {
+        delete next[item.id];
+      });
+      return next;
+    });
+    setMode('edit');
+    setShowDeleteGroupConfirm(false);
+    setEditingGroupId(null);
+    setGroupTitleDraft('');
+    setNewItemText('');
+    window.history.replaceState({}, '', window.location.pathname);
+  };
+
   const comparison = useMemo(() => {
     if (mode !== 'compare-result') return null;
 
-    const bothDone: string[] = [];
-    const bothNotDone: string[] = [];
-    const iDoneHeNot: string[] = [];
-    const heDoneINot: string[] = [];
+    const bothDone: ListItem[] = [];
+    const bothNotDone: ListItem[] = [];
+    const iDoneHeNot: ListItem[] = [];
+    const heDoneINot: ListItem[] = [];
 
-    items.forEach((item) => {
-      const myTick = !!myTicks[item];
-      const hisTick = !!sharedTicks[item];
+    activeGroup.items.forEach((item) => {
+      const myTick = !!myTicks[item.id];
+      const hisTick = !!sharedTicks[item.id];
 
       if (myTick && hisTick) bothDone.push(item);
       else if (!myTick && !hisTick) bothNotDone.push(item);
@@ -377,21 +971,16 @@ export default function App() {
     });
 
     return { bothDone, bothNotDone, iDoneHeNot, heDoneINot };
-  }, [items, myTicks, sharedTicks, mode]);
+  }, [activeGroup.items, mode, myTicks, sharedTicks]);
 
   return (
     <div className="min-h-screen p-4 md:p-10 flex flex-col items-center">
-      <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="w-full max-w-xl"
-      >
-        {/* Top Navigation */}
-        <nav className="mb-8 flex justify-between items-center px-2">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="w-full max-w-xl">
+        <nav className="mb-5 flex justify-between items-center px-2">
           <div className="flex flex-col">
             <span className="ui-label">人生清单</span>
             <span className="ui-mono uppercase tracking-tighter">
-              {mode === 'edit' ? 'v1.0 / 编辑' : 'v1.0 / 对比'}
+              {mode === 'edit' ? 'v2.0 / Notebook' : 'v2.0 / 对比'}
             </span>
           </div>
           <div className="flex gap-3">
@@ -401,101 +990,159 @@ export default function App() {
               </button>
             )}
             {mode === 'edit' && (
-              <button onClick={clearAllData} className="ui-btn-circle text-neutral-300 hover:text-klein" title="Reset to Default">
+              <button onClick={() => setShowResetConfirm(true)} className="ui-btn-circle text-neutral-300 hover:text-klein" title="Reset to Default">
                 <RotateCcw size={18} />
               </button>
             )}
             {mode === 'edit' && (
-              <button 
-                onClick={() => setShowQrCode(true)} 
-                className="ui-btn-circle"
-                title="QR Code"
-              >
+              <button onClick={() => setShowQrCode(true)} className="ui-btn-circle" title="QR Code">
                 <QrCode size={18} />
               </button>
             )}
             {mode === 'edit' && (
-              <button 
-                onClick={copyToClipboard} 
-                className={cn("ui-btn-circle", copySuccess && "active")}
-                title="Share Link"
-              >
+              <button onClick={copyToClipboard} className={cn("ui-btn-circle", copySuccess && "active")} title="Share Link">
                 {copySuccess ? <Check size={18} /> : <Share2 size={18} />}
               </button>
             )}
           </div>
         </nav>
 
-        {/* Hybrid Paper Section */}
+        <div className="mb-3 px-2">
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
+            {groups.map((group) => (
+              <button
+                key={group.id}
+                onClick={() => selectGroup(group.id)}
+                className={cn(
+                  "shrink-0 rounded-full border px-4 py-2 text-sm font-medium transition-all",
+                  group.id === activeGroupId
+                    ? "border-klein bg-klein text-white shadow-sm"
+                    : "border-neutral-200 bg-white text-neutral-500 hover:border-klein hover:text-klein"
+                )}
+                title={group.id}
+              >
+                {group.title}
+              </button>
+            ))}
+            {mode === 'edit' && (
+              <button
+                onClick={createGroup}
+                className="shrink-0 rounded-full border border-dashed border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-500 transition-all hover:border-klein hover:text-klein flex items-center gap-2"
+              >
+                <Plus size={14} />
+                新建一页
+              </button>
+            )}
+          </div>
+          <div className="ui-mono px-1 opacity-45">
+            当前页 ID: {activeGroup.id}
+          </div>
+        </div>
+
         <div className="hybrid-paper" ref={paperRef}>
           <div className="paper-lines">
             <div className="paper-content">
+              <div className="flex items-center justify-between gap-4 border-b border-neutral-100 on-lines">
+                <div className="min-w-0">
+                  {editingGroupId === activeGroup.id ? (
+                    <input
+                      autoFocus
+                      type="text"
+                      value={groupTitleDraft}
+                      onChange={(e) => setGroupTitleDraft(e.target.value)}
+                      onBlur={saveGroupTitle}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') saveGroupTitle();
+                        if (e.key === 'Escape') cancelRenameGroup();
+                      }}
+                      className="list-text w-full bg-transparent border-none outline-none"
+                    />
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={startRenameGroup}
+                      className="list-text truncate-text text-left hover:text-klein transition-colors"
+                      title="点击重命名这一页"
+                    >
+                      {activeGroup.title}
+                    </button>
+                  )}
+                  <div className="ui-mono opacity-45 truncate-text">{activeGroup.id}</div>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  <div className="ui-mono opacity-35">[{activeGroup.items.length}]</div>
+                  {mode === 'edit' && activeGroup.id !== DEFAULT_GROUP_ID && (
+                    <button
+                      onClick={() => setShowDeleteGroupConfirm(true)}
+                      className="text-neutral-300 hover:text-klein transition-colors"
+                      title="Delete Page"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
+                </div>
+              </div>
+
               <AnimatePresence mode="wait">
                 {mode === 'compare-result' && comparison ? (
-                  <motion.div 
-                    key="result"
+                  <motion.div
+                    key={`result-${activeGroup.id}`}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0 }}
-                    className="space-y-0"
+                    className="space-y-0 pt-2"
                   >
-                    <ResultSection title="共同完成" items={comparison.bothDone} color="bg-klein" itemOrigins={itemOrigins} />
-                    <ResultSection title="我已完成" items={comparison.iDoneHeNot} color="bg-neutral-800" itemOrigins={itemOrigins} />
-                    <ResultSection title="对方已完成" items={comparison.heDoneINot} color="bg-neutral-400" itemOrigins={itemOrigins} />
-                    <ResultSection title="共同目标" items={comparison.bothNotDone} color="bg-neutral-200" itemOrigins={itemOrigins} />
+                    <ResultSection title="共同完成" items={comparison.bothDone} color="bg-klein" />
+                    <ResultSection title="我已完成" items={comparison.iDoneHeNot} color="bg-neutral-800" />
+                    <ResultSection title="对方已完成" items={comparison.heDoneINot} color="bg-neutral-400" />
+                    <ResultSection title="都没有完成" items={comparison.bothNotDone} color="bg-neutral-200" />
                   </motion.div>
                 ) : (
-                  <motion.div 
-                    key="list"
+                  <motion.div
+                    key={`list-${activeGroup.id}`}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                   >
                     {mode === 'compare-step-1' && (
                       <div className="text-klein font-bold list-text on-lines mb-9">
-                        收到同步请求：请在下方勾选你的进度以进行对比。
+                        收到这一页的同步请求：请在下方勾选你的进度以进行对比。
                         <br />
                         ---
                       </div>
                     )}
 
                     <ul className="space-y-0">
-                      {items.map((item) => (
-                        <motion.li 
-                          key={item}
-                          className="group relative flex items-center gap-2"
-                        >
-                          <input 
-                            type="checkbox" 
-                            checked={!!myTicks[item]}
-                            onChange={(e) => toggleTick(item, e)}
+                      {activeGroup.items.map((item) => (
+                        <motion.li key={item.id} className="group relative flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={!!myTicks[item.id]}
+                            onChange={(e) => toggleTick(item.id, e)}
                             className="rams-checkbox absolute left-[-55px]"
                           />
-                          <div
-                            className="flex flex-1 items-center gap-2 cursor-pointer"
-                            onClick={(e) => toggleTick(item, e)}
-                          >
+                          <div className="flex flex-1 items-center gap-2 cursor-pointer" onClick={(e) => toggleTick(item.id, e)}>
                             <span
                               className={cn(
                                 "list-text on-lines select-none marker-text",
-                                myTicks[item] && "is-highlighted"
+                                myTicks[item.id] && "is-highlighted"
                               )}
-                              style={getMarkerStyle(item)}
+                              style={getMarkerStyle(item.text)}
                             >
                               <span className="marker-stroke" aria-hidden="true" />
                               <span className="marker-stroke marker-stroke-secondary" aria-hidden="true" />
-                              <span className="marker-label">{item}</span>
+                              <span className="marker-label">{item.text}</span>
                             </span>
-                            {itemOrigins[item] && itemOrigins[item] !== 'local' && (
-                              <div 
-                                className={cn("w-1.5 h-1.5 rounded-full shrink-0", getColorFromId(itemOrigins[item]))}
-                                title={`Shared by ${itemOrigins[item]}`}
+                            {item.origin.type !== 'default' && (
+                              <div
+                                className={cn("w-1.5 h-1.5 rounded-full shrink-0", getOriginDotClassName(item.origin))}
+                                title={getOriginLabel(item.origin)}
                               />
                             )}
                           </div>
                           {mode === 'edit' && (
-                            <button 
-                              onClick={() => removeItem(item)}
+                            <button
+                              onClick={() => removeItem(item.id)}
                               className="opacity-0 group-hover:opacity-100 p-1 text-neutral-300 hover:text-klein transition-all ml-auto relative z-10"
                             >
                               <X size={16} />
@@ -508,12 +1155,12 @@ export default function App() {
                     {mode === 'edit' && (
                       <div className="input-row border-t border-neutral-100 mt-9 on-lines">
                         <Plus size={18} className="text-klein mr-4 shrink-0" />
-                        <input 
-                          type="text" 
+                        <input
+                          type="text"
                           value={newItemText}
                           onChange={(e) => setNewItemText(e.target.value)}
                           onKeyDown={(e) => e.key === 'Enter' && addItem()}
-                          placeholder="添加新项目..."
+                          placeholder={`给「${activeGroup.title}」添加新项目...`}
                           className="flex-1 bg-transparent border-none outline-none list-text on-lines placeholder:text-neutral-200 h-full"
                         />
                       </div>
@@ -525,54 +1172,143 @@ export default function App() {
           </div>
         </div>
 
-        {/* Bottom Action */}
         <footer className="mt-10 flex flex-col items-center">
           {mode === 'compare-step-1' && (
-            <button 
+            <button
               onClick={startComparison}
               className="px-12 py-4 bg-neutral-900 text-white rounded-full font-medium tracking-tight shadow-xl hover:bg-black transition-all flex items-center gap-3"
             >
               <Users size={18} />
-              对比进度
+              对比这一页
             </button>
           )}
+          {mode === 'edit' && (
+            <div className="mt-3 flex items-center gap-4 ui-mono opacity-55">
+              <span className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-klein" />
+                我添加的
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                外部导入
+              </span>
+            </div>
+          )}
           <div className="mt-6 ui-mono opacity-20">
-            RAMS-NOTEBOOK HYBRID / v1.0
+            RAMS-NOTEBOOK HYBRID / v2.0
           </div>
         </footer>
 
-        {/* QR Code Modal */}
         <AnimatePresence>
+          {showResetConfirm && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-neutral-900/40 backdrop-blur-sm"
+              onClick={() => setShowResetConfirm(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.94, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.94, opacity: 0 }}
+                className="bg-white p-7 rounded-3xl shadow-2xl max-w-sm w-full flex flex-col gap-5"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="space-y-2">
+                  <h3 className="text-klein font-bold text-lg">确认重置吗？</h3>
+                  <p className="text-neutral-500 text-sm leading-6">
+                    这会清空你本地所有页签、勾选、自己新增的项目，以及已导入的外部页，并恢复成默认第一页。
+                  </p>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowResetConfirm(false)}
+                    className="flex-1 py-3 bg-neutral-100 hover:bg-neutral-200 text-neutral-600 rounded-xl font-medium transition-colors"
+                  >
+                    取消
+                  </button>
+                  <button
+                    onClick={clearAllData}
+                    className="flex-1 py-3 bg-neutral-900 hover:bg-black text-white rounded-xl font-medium transition-colors"
+                  >
+                    确认重置
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+
+          {showDeleteGroupConfirm && activeGroup.id !== DEFAULT_GROUP_ID && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-neutral-900/40 backdrop-blur-sm"
+              onClick={() => setShowDeleteGroupConfirm(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.94, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.94, opacity: 0 }}
+                className="bg-white p-7 rounded-3xl shadow-2xl max-w-sm w-full flex flex-col gap-5"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="space-y-2">
+                  <h3 className="text-klein font-bold text-lg">删除这一页吗？</h3>
+                  <p className="text-neutral-500 text-sm leading-6">
+                    这会删除「{activeGroup.title}」这一页，以及这页里的项目和勾选记录。默认页不能删除。
+                  </p>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowDeleteGroupConfirm(false)}
+                    className="flex-1 py-3 bg-neutral-100 hover:bg-neutral-200 text-neutral-600 rounded-xl font-medium transition-colors"
+                  >
+                    取消
+                  </button>
+                  <button
+                    onClick={deleteActiveGroup}
+                    className="flex-1 py-3 bg-neutral-900 hover:bg-black text-white rounded-xl font-medium transition-colors"
+                  >
+                    确认删除
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+
           {showQrCode && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-neutral-900/40 backdrop-blur-sm"
               onClick={() => setShowQrCode(false)}
             >
-              <motion.div 
+              <motion.div
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.9, opacity: 0 }}
                 className="bg-white p-8 rounded-3xl shadow-2xl max-w-xs w-full flex flex-col items-center gap-6"
-                onClick={e => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
               >
                 <div className="text-center space-y-2">
-                  <h3 className="text-klein font-bold text-lg">扫码分享清单</h3>
-                  <p className="text-neutral-400 text-sm">让对方扫一扫，开启对比</p>
-                </div>
-                
-                <div className="p-4 bg-white border-4 border-neutral-50 rounded-2xl shadow-inner">
-                  <QRCodeCanvas 
-                    value={generateShareUrl()} 
-                    size={200}
-                    level="H"
-                    includeMargin={false}
-                  />
+                  <h3 className="text-klein font-bold text-lg">分享当前这一页</h3>
+                  <p className="text-neutral-400 text-sm">对方扫码后，会导入「{activeGroup.title}」这一组</p>
                 </div>
 
-                <button 
+                <div className="p-4 bg-white border-4 border-neutral-50 rounded-2xl shadow-inner">
+                  <QRCodeCanvas value={generateShareUrl()} size={200} level="H" includeMargin={false} />
+                </div>
+
+                <div className="ui-mono text-center opacity-45 break-all">
+                  {activeGroup.id}
+                </div>
+
+                <button
                   onClick={() => setShowQrCode(false)}
                   className="w-full py-3 bg-neutral-100 hover:bg-neutral-200 text-neutral-600 rounded-xl font-medium transition-colors"
                 >
@@ -587,25 +1323,25 @@ export default function App() {
   );
 }
 
-function ResultSection({ title, items, color, itemOrigins }: { title: string, items: string[], color: string, itemOrigins: Record<string, string> }) {
+function ResultSection({ title, items, color }: { title: string; items: ListItem[]; color: string }) {
   if (items.length === 0) return null;
-  
+
   return (
     <div className="mb-4">
       <h3 className="flex items-center gap-3 border-b border-neutral-100 on-lines">
-        <div className={cn("w-1.5 h-4 rounded-full", color)}></div>
+        <div className={cn("w-1.5 h-4 rounded-full", color)} />
         <span className="ui-label text-neutral-400">{title}</span>
         <span className="ui-mono ml-auto">[{items.length}]</span>
       </h3>
       <ul className="space-y-0">
-        {items.map((item, i) => (
-          <li key={i} className="flex items-center gap-3">
-            <span className="w-1 h-1 rounded-full bg-neutral-200 shrink-0"></span>
-            <span className="list-text on-lines text-neutral-700 flex-1">{item}</span>
-            {itemOrigins[item] && itemOrigins[item] !== 'local' && (
-              <div 
-                className={cn("w-1.5 h-1.5 rounded-full shrink-0", getColorFromId(itemOrigins[item]))}
-                title={`Shared by ${itemOrigins[item]}`}
+        {items.map((item) => (
+          <li key={item.id} className="flex items-center gap-3">
+            <span className="w-1 h-1 rounded-full bg-neutral-200 shrink-0" />
+            <span className="list-text on-lines text-neutral-700 flex-1">{item.text}</span>
+            {item.origin.type !== 'default' && (
+              <div
+                className={cn("w-1.5 h-1.5 rounded-full shrink-0", getOriginDotClassName(item.origin))}
+                title={getOriginLabel(item.origin)}
               />
             )}
           </li>
