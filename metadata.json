@@ -1,0 +1,5 @@
+{
+  "name": "Life List Share",
+  "description": "A collaborative life bucket list app that allows users to share their progress and compare with friends through encoded URLs.",
+  "requestFramePermissions": []
+}
