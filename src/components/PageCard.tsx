@@ -4,6 +4,7 @@ import { Plus, X } from 'lucide-react';
 import type { AppMode, GroupPage } from '../lib/notebook-types';
 import { cn } from '../lib/cn';
 import { getMarkerStyle, getOriginDotClassName, getOriginLabel } from '../lib/notebook-ui';
+import { PAGE_CARD_HEIGHT_PX, PAGE_CARD_WIDTH_PX } from '../lib/workspace-constants';
 
 interface PageCardProps {
   className?: string;
@@ -47,12 +48,13 @@ export function PageCard({
         'hybrid-paper mx-auto',
         className
       )}
+      style={{ width: `${PAGE_CARD_WIDTH_PX}px`, height: `${PAGE_CARD_HEIGHT_PX}px` }}
       layout
       layoutId={`page-card-${page.key}`}
       transition={{ type: 'spring', stiffness: 260, damping: 30 }}
     >
       <div className="paper-lines">
-        <div className="paper-content">
+        <div className="paper-content flex h-full flex-col">
           <div className="mx-auto mb-[0.55rem] flex min-h-[calc(var(--paper-line-height)*1.5)] max-w-[550px] items-start justify-between gap-4 border-b border-[rgba(0,47,167,0.08)] px-[0.4rem] pb-[0.65rem] pt-[0.85rem] max-md:flex-col max-md:items-start max-md:pr-0">
             <motion.div layout>
               <div className="ui-label">Page {page.pageIndex + 1}</div>

@@ -28,9 +28,7 @@ body {
 /* Hybrid Paper Component */
 .hybrid-paper {
   position: relative;
-  min-height: 600px;
   width: 100%;
-  max-width: 550px;
   background: #FFFFFF;
   margin: 2rem auto;
   border-radius: 4px;
