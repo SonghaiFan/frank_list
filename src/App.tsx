@@ -48,6 +48,7 @@ interface PersistedAppState {
   groups: Group[];
   ticks: Record<string, boolean>;
   boundPages: Record<string, boolean>;
+  extraPageCounts: Record<string, number>;
   activeGroupId: string;
   nextGroupId: number;
   nextItemId: number;
@@ -67,6 +68,7 @@ interface CompactLocalState {
   a: string;
   c: [string, string];
   b: string[];
+  p?: [string, string][];
   g: CompactLocalGroup[];
 }
 
@@ -179,10 +181,11 @@ const createDefaultGroup = (): Group => ({
 });
 
 const createDefaultState = (): PersistedAppState => ({
-  v: 5,
+  v: 6,
   groups: [createDefaultGroup()],
   ticks: {},
   boundPages: {},
+  extraPageCounts: {},
   activeGroupId: DEFAULT_GROUP_ID,
   nextGroupId: 1,
   nextItemId: 0,
@@ -247,10 +250,11 @@ const normalizeState = (state?: Partial<PersistedAppState>): PersistedAppState =
     : groups[0].id;
 
   return {
-    v: 5,
+    v: 6,
     groups,
     ticks: state?.ticks ?? {},
     boundPages: state?.boundPages ?? {},
+    extraPageCounts: state?.extraPageCounts ?? {},
     activeGroupId,
     nextGroupId: state?.nextGroupId ?? 1,
     nextItemId: state?.nextItemId ?? 0,
@@ -281,9 +285,11 @@ const getPageKey = (groupId: string, pageIndex: number) => `${groupId}:${pageInd
 const getGroupPages = (
   group: Group,
   ticks: Record<string, boolean>,
-  boundPages: Record<string, boolean>
+  boundPages: Record<string, boolean>,
+  extraPageCount = 0
 ): GroupPage[] => {
-  const pageCount = Math.max(1, Math.ceil(group.items.length / PAGE_SIZE));
+  const naturalPageCount = Math.max(1, Math.ceil(group.items.length / PAGE_SIZE));
+  const pageCount = Math.max(1, naturalPageCount + extraPageCount);
 
   return Array.from({ length: pageCount }, (_, pageIndex) => {
     const items = group.items.slice(pageIndex * PAGE_SIZE, (pageIndex + 1) * PAGE_SIZE);
@@ -365,10 +371,13 @@ const decompressLocalGroup = (group: CompactLocalGroup) => {
 };
 
 const toCompactLocalState = (state: PersistedAppState): CompactLocalState => ({
-  v: 5,
+  v: 6,
   a: state.activeGroupId,
   c: [state.nextGroupId.toString(36), state.nextItemId.toString(36)],
   b: Object.keys(state.boundPages).filter((key) => state.boundPages[key]),
+  p: Object.entries(state.extraPageCounts)
+    .filter(([, count]) => count > 0)
+    .map(([groupId, count]) => [groupId, count.toString(36)]),
   g: state.groups.map((group) => compressLocalGroup(group, state.ticks)),
 });
 
@@ -398,16 +407,25 @@ const serializeCompactLocalState = (state: CompactLocalState) => {
     ].join(GROUP_FIELD_SEP);
   }).join(GROUP_SEP);
 
-  return ['L5', state.a, state.c[0], state.c[1], state.b.map(escapeCompact).join(GROUP_SEP), groups].join(TOP_SEP);
+  const extraPages = (state.p ?? [])
+    .map(([groupId, count]) => `${groupId}${GROUP_FIELD_SEP}${count}`)
+    .join(GROUP_SEP);
+
+  return ['L6', state.a, state.c[0], state.c[1], state.b.map(escapeCompact).join(GROUP_SEP), extraPages, groups].join(TOP_SEP);
 };
 
 const parseCompactLocalState = (raw: string): CompactLocalState | null => {
   const parts = splitEscaped(raw, TOP_SEP);
   const [version, activeGroupId, nextGroupId, nextItemId] = parts;
-  if (version !== 'L4' && version !== 'L5') return null;
+  if (version !== 'L4' && version !== 'L5' && version !== 'L6') return null;
 
-  const boundRaw = version === 'L5' ? (parts[4] ?? '') : '';
-  const groupsRaw = version === 'L5' ? (parts[5] ?? '') : (parts[4] ?? '');
+  const boundRaw = version === 'L5' || version === 'L6' ? (parts[4] ?? '') : '';
+  const extraPagesRaw = version === 'L6' ? (parts[5] ?? '') : '';
+  const groupsRaw = version === 'L6'
+    ? (parts[6] ?? '')
+    : version === 'L5'
+      ? (parts[5] ?? '')
+      : (parts[4] ?? '');
 
   const groups = groupsRaw
     ? splitEscaped(groupsRaw, GROUP_SEP).filter(Boolean).map((groupRaw) => {
@@ -422,10 +440,18 @@ const parseCompactLocalState = (raw: string): CompactLocalState | null => {
     : [];
 
   return {
-    v: version === 'L5' ? 5 : 4,
+    v: version === 'L6' ? 6 : version === 'L5' ? 5 : 4,
     a: activeGroupId,
     c: [nextGroupId ?? '1', nextItemId ?? '0'],
     b: boundRaw ? splitEscaped(boundRaw, GROUP_SEP).filter(Boolean) : [],
+    p: extraPagesRaw
+      ? splitEscaped(extraPagesRaw, GROUP_SEP)
+          .filter(Boolean)
+          .map((entry) => {
+            const [groupId, count] = splitEscaped(entry, GROUP_FIELD_SEP);
+            return [groupId, count ?? '0'] as [string, string];
+          })
+      : [],
     g: groups,
   };
 };
@@ -438,10 +464,13 @@ const fromCompactLocalState = (state: CompactLocalState): PersistedAppState => {
   }, {});
 
   return normalizeState({
-    v: 5,
+    v: 6,
     groups,
     ticks,
     boundPages: Object.fromEntries(state.b.map((key) => [key, true])),
+    extraPageCounts: Object.fromEntries(
+      (state.p ?? []).map(([groupId, count]) => [groupId, parseInt(count, 36) || 0])
+    ),
     activeGroupId: state.a,
     nextGroupId: parseInt(state.c?.[0] ?? '1', 36),
     nextItemId: parseInt(state.c?.[1] ?? '0', 36),
@@ -449,11 +478,11 @@ const fromCompactLocalState = (state: CompactLocalState): PersistedAppState => {
 };
 
 const serializeEncryptedPayload = (iv: Uint8Array, data: Uint8Array) =>
-  ['E5', encodeBase64(iv), encodeBase64(data)].join(TOP_SEP);
+  ['E6', encodeBase64(iv), encodeBase64(data)].join(TOP_SEP);
 
 const parseEncryptedPayload = (raw: string) => {
   const [version, iv, data] = splitEscaped(raw, TOP_SEP);
-  if ((version !== 'E4' && version !== 'E5') || !iv || !data) return null;
+  if ((version !== 'E4' && version !== 'E5' && version !== 'E6') || !iv || !data) return null;
   return { iv, data };
 };
 
@@ -651,6 +680,7 @@ export default function App() {
   const [activeGroupId, setActiveGroupId] = useState<string>(DEFAULT_GROUP_ID);
   const [myTicks, setMyTicks] = useState<Record<string, boolean>>({});
   const [boundPages, setBoundPages] = useState<Record<string, boolean>>({});
+  const [extraPageCounts, setExtraPageCounts] = useState<Record<string, number>>({});
   const [nextGroupId, setNextGroupId] = useState(1);
   const [nextItemId, setNextItemId] = useState(0);
   const [sharedTicks, setSharedTicks] = useState<Record<string, boolean>>({});
@@ -671,8 +701,8 @@ export default function App() {
     [activeGroupId, groups]
   );
   const activeGroupPages = useMemo(
-    () => getGroupPages(activeGroup, myTicks, boundPages),
-    [activeGroup, myTicks, boundPages]
+    () => getGroupPages(activeGroup, myTicks, boundPages, extraPageCounts[activeGroup.id] ?? 0),
+    [activeGroup, myTicks, boundPages, extraPageCounts]
   );
   const stackPages = useMemo(
     () => activeGroupPages.filter((page) => !page.isBound),
@@ -718,6 +748,7 @@ export default function App() {
       setActiveGroupId(currentState.activeGroupId);
       setMyTicks(currentState.ticks);
       setBoundPages(currentState.boundPages);
+      setExtraPageCounts(currentState.extraPageCounts);
       setNextGroupId(currentState.nextGroupId);
       setNextItemId(currentState.nextItemId);
       setIsHydrated(true);
@@ -734,6 +765,7 @@ export default function App() {
         groups,
         ticks: myTicks,
         boundPages,
+        extraPageCounts,
         activeGroupId,
         nextGroupId,
         nextItemId,
@@ -743,7 +775,7 @@ export default function App() {
     };
 
     persist();
-  }, [activeGroupId, boundPages, groups, isHydrated, myId, myTicks, nextGroupId, nextItemId]);
+  }, [activeGroupId, boundPages, extraPageCounts, groups, isHydrated, myId, myTicks, nextGroupId, nextItemId]);
 
   useEffect(() => {
     setBoundPages((prev) => {
@@ -857,6 +889,8 @@ export default function App() {
     if (!text) return;
     if (activeGroup.items.some((item) => item.text === text)) return;
 
+    const previousNaturalPageCount = Math.max(1, Math.ceil(activeGroup.items.length / PAGE_SIZE));
+
     const newItem: ListItem = {
       id: createOwnedId(myId, nextItemId),
       text,
@@ -870,8 +904,31 @@ export default function App() {
           : group
       )
     );
+    setExtraPageCounts((prev) => {
+      const currentExtra = prev[activeGroupId] ?? 0;
+      if (currentExtra === 0) return prev;
+
+      const nextNaturalPageCount = Math.max(1, Math.ceil((activeGroup.items.length + 1) / PAGE_SIZE));
+      const consumedExtraPages = Math.max(0, nextNaturalPageCount - previousNaturalPageCount);
+      if (consumedExtraPages === 0) return prev;
+
+      const nextExtra = Math.max(0, currentExtra - consumedExtraPages);
+      if (nextExtra === currentExtra) return prev;
+
+      const next = { ...prev };
+      if (nextExtra > 0) next[activeGroupId] = nextExtra;
+      else delete next[activeGroupId];
+      return next;
+    });
     setNextItemId((prev) => prev + 1);
     setNewItemText('');
+  };
+
+  const appendEmptyPage = () => {
+    setExtraPageCounts((prev) => ({
+      ...prev,
+      [activeGroupId]: (prev[activeGroupId] ?? 0) + 1,
+    }));
   };
 
   const movePageToLowerStack = (pageKey: string) => {
@@ -894,6 +951,20 @@ export default function App() {
     setSharedTicks((prev) => {
       const next = { ...prev };
       delete next[itemId];
+      return next;
+    });
+    setExtraPageCounts((prev) => {
+      const currentExtra = prev[activeGroupId] ?? 0;
+      if (currentExtra === 0) return prev;
+
+      const nextNaturalPageCount = Math.max(1, Math.ceil((activeGroup.items.length - 1) / PAGE_SIZE));
+      const maxUsefulExtra = Math.max(0, activeGroupPages.length - nextNaturalPageCount);
+      const nextExtra = Math.min(currentExtra, maxUsefulExtra);
+      if (nextExtra === currentExtra) return prev;
+
+      const next = { ...prev };
+      if (nextExtra > 0) next[activeGroupId] = nextExtra;
+      else delete next[activeGroupId];
       return next;
     });
   };
@@ -934,6 +1005,7 @@ export default function App() {
     setActiveGroupId(next.activeGroupId);
     setMyTicks({});
     setBoundPages({});
+    setExtraPageCounts({});
     setNextGroupId(next.nextGroupId);
     setNextItemId(next.nextItemId);
     setSharedTicks({});
@@ -968,6 +1040,11 @@ export default function App() {
     setBoundPages((prev) =>
       Object.fromEntries(Object.entries(prev).filter(([key]) => !key.startsWith(`${activeGroup.id}:`)))
     );
+    setExtraPageCounts((prev) => {
+      const next = { ...prev };
+      delete next[activeGroup.id];
+      return next;
+    });
     setMode('edit');
     setShowDeleteGroupConfirm(false);
     setEditingGroupId(null);
@@ -1034,6 +1111,7 @@ export default function App() {
               paperRef={paperRef}
               ticks={myTicks}
               onAddItem={addItem}
+              onAppendPage={appendEmptyPage}
               onBindPage={movePageToLowerStack}
                 onDeleteGroup={() => setShowDeleteGroupConfirm(true)}
                 onDraftChange={setGroupTitleDraft}

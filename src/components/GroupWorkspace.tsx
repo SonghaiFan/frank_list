@@ -16,6 +16,7 @@ interface GroupWorkspaceProps {
   paperRef: React.RefObject<HTMLDivElement | null>;
   ticks: Record<string, boolean>;
   onBindPage: (pageKey: string) => void;
+  onAppendPage: () => void;
   onDeleteGroup: () => void;
   onDraftChange: (value: string) => void;
   onItemTextChange: (value: string) => void;
@@ -39,6 +40,7 @@ export function GroupWorkspace({
   paperRef,
   ticks,
   onBindPage,
+  onAppendPage,
   onDeleteGroup,
   onDraftChange,
   onItemTextChange,
@@ -120,6 +122,7 @@ export function GroupWorkspace({
             pages={activeGroupPages}
             ticks={ticks}
             onAddItem={onAddItem}
+            onAppendPage={onAppendPage}
             onBindPage={onBindPage}
             onItemTextChange={onItemTextChange}
             onRemoveItem={onRemoveItem}

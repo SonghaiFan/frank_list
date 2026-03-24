@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { motion } from 'motion/react';
 import type { AppMode, GroupPage } from '../lib/notebook-types';
 import { cn } from '../lib/cn';
@@ -18,6 +18,7 @@ interface CardStackProps {
   pages: GroupPage[];
   ticks: Record<string, boolean>;
   onAddItem?: () => void;
+  onAppendPage?: () => void;
   onBindPage?: (pageKey: string) => void;
   onItemTextChange?: (value: string) => void;
   onRemoveItem?: (itemId: string) => void;
@@ -36,28 +37,47 @@ export function CardStack({
   pages,
   ticks,
   onAddItem,
+  onAppendPage,
   onBindPage,
   onItemTextChange,
   onRemoveItem,
   onToggleTick,
 }: CardStackProps) {
   const [focusedPageKey, setFocusedPageKey] = useState<string | null>(pages[0]?.key ?? null);
+  const previousKeysRef = useRef<string[]>(pages.map((page) => page.key));
 
   useEffect(() => {
     if (pages.length === 0) {
       setFocusedPageKey(null);
+      previousKeysRef.current = [];
       return;
     }
 
-    setFocusedPageKey((currentKey) =>
-      currentKey && pages.some((page) => page.key === currentKey)
+    const nextKeys = pages.map((page) => page.key);
+    const newlyAddedKey = nextKeys.find((key) => !previousKeysRef.current.includes(key));
+
+    setFocusedPageKey((currentKey) => {
+      if (newlyAddedKey) return newlyAddedKey;
+      return currentKey && pages.some((page) => page.key === currentKey)
         ? currentKey
-        : pages[0].key
-    );
+        : pages[0].key;
+    });
+
+    previousKeysRef.current = nextKeys;
   }, [pages]);
 
   const focusedPageIndex = pages.findIndex((page) => page.key === focusedPageKey);
   const safeFocusedPageIndex = focusedPageIndex === -1 ? 0 : focusedPageIndex;
+  const currentPage = pages[safeFocusedPageIndex];
+  const isLastPageFocused = safeFocusedPageIndex === pages.length - 1;
+  const isCurrentPageFull = currentPage ? currentPage.items.length >= pageSize : false;
+  const areAllPagesFull = pages.length > 0 && pages.every((page) => page.items.length >= pageSize);
+  const shouldShowAddItemInput = allowAddItemInput
+    && interactive
+    && mode === 'edit'
+    && isLastPageFocused
+    && !!currentPage
+    && !isCurrentPageFull;
   const goPrevPage = () => {
     const prevPage = pages[Math.max(0, safeFocusedPageIndex - 1)];
     if (prevPage) setFocusedPageKey(prevPage.key);
@@ -94,26 +114,50 @@ export function CardStack({
 
   return (
     <div className={cn('relative flex min-h-[700px] items-start justify-center overflow-visible px-6 pb-8 pt-2 max-md:min-h-[680px] max-md:px-0', className)}>
-      {pages.length > 1 && (
+      {(pages.length > 1 || areAllPagesFull) && (
         <>
-          <button
-            type="button"
-            onClick={goPrevPage}
-            disabled={safeFocusedPageIndex === 0}
-            className="absolute left-0 top-[38%] z-20 flex h-12 w-12 items-center justify-center rounded-full border-none bg-white/88 text-gray-900/85 shadow-[0_12px_26px_rgba(0,0,0,0.1)] transition-all hover:-translate-y-px hover:bg-white disabled:cursor-not-allowed disabled:opacity-25 max-md:bottom-[18px] max-md:left-[calc(50%-58px)] max-md:top-auto"
-            title="Previous page"
-          >
-            <ChevronLeft size={28} />
-          </button>
-          <button
-            type="button"
-            onClick={goNextPage}
-            disabled={safeFocusedPageIndex === pages.length - 1}
-            className="absolute right-0 top-[38%] z-20 flex h-12 w-12 items-center justify-center rounded-full border-none bg-white/88 text-gray-900/85 shadow-[0_12px_26px_rgba(0,0,0,0.1)] transition-all hover:-translate-y-px hover:bg-white disabled:cursor-not-allowed disabled:opacity-25 max-md:bottom-[18px] max-md:right-[calc(50%-58px)] max-md:top-auto"
-            title="Next page"
-          >
-            <ChevronRight size={28} />
-          </button>
+          {areAllPagesFull && isLastPageFocused ? (
+            <button
+              type="button"
+              onClick={onAppendPage}
+              className="absolute right-0 top-[38%] z-20 flex h-12 min-w-12 items-center justify-center gap-1 rounded-full border-none bg-white/92 px-4 text-gray-900/85 shadow-[0_12px_26px_rgba(0,0,0,0.1)] transition-all hover:-translate-y-px hover:bg-white max-md:bottom-[18px] max-md:right-[calc(50%-58px)] max-md:top-auto"
+              title="Add new page"
+            >
+              <Plus size={18} />
+              <span className="ui-mono text-[11px]">NEW</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={goNextPage}
+              disabled={safeFocusedPageIndex === pages.length - 1}
+              className="absolute right-0 top-[38%] z-20 flex h-12 w-12 items-center justify-center rounded-full border-none bg-white/88 text-gray-900/85 shadow-[0_12px_26px_rgba(0,0,0,0.1)] transition-all hover:-translate-y-px hover:bg-white disabled:cursor-not-allowed disabled:opacity-25 max-md:bottom-[18px] max-md:right-[calc(50%-58px)] max-md:top-auto"
+              title="Next page"
+            >
+              <ChevronRight size={28} />
+            </button>
+          )}
+          {areAllPagesFull && pages.length > 1 && safeFocusedPageIndex === 0 && !isLastPageFocused ? (
+            <button
+              type="button"
+              onClick={onAppendPage}
+              className="absolute left-0 top-[38%] z-20 flex h-12 min-w-12 items-center justify-center gap-1 rounded-full border-none bg-white/92 px-4 text-gray-900/85 shadow-[0_12px_26px_rgba(0,0,0,0.1)] transition-all hover:-translate-y-px hover:bg-white max-md:bottom-[18px] max-md:left-[calc(50%-58px)] max-md:top-auto"
+              title="Add new page"
+            >
+              <Plus size={18} />
+              <span className="ui-mono text-[11px]">NEW</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={goPrevPage}
+              disabled={safeFocusedPageIndex === 0}
+              className="absolute left-0 top-[38%] z-20 flex h-12 w-12 items-center justify-center rounded-full border-none bg-white/88 text-gray-900/85 shadow-[0_12px_26px_rgba(0,0,0,0.1)] transition-all hover:-translate-y-px hover:bg-white disabled:cursor-not-allowed disabled:opacity-25 max-md:bottom-[18px] max-md:left-[calc(50%-58px)] max-md:top-auto"
+              title="Previous page"
+            >
+              <ChevronLeft size={28} />
+            </button>
+          )}
         </>
       )}
 
@@ -146,7 +190,7 @@ export function CardStack({
               isActive={isActive}
               mode={mode}
               newItemText={newItemText}
-              showAddItemInput={allowAddItemInput && interactive && mode === 'edit' && page.pageIndex === pages.length - 1}
+              showAddItemInput={isActive && shouldShowAddItemInput}
               ticks={ticks}
               onAddItem={onAddItem}
               onBindPage={onBindPage}
