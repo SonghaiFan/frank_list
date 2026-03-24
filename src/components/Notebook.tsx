@@ -5,7 +5,7 @@ import type { GroupPage } from '../lib/notebook-types';
 import { PAGE_CARD_HEIGHT_PX, PAGE_CARD_WIDTH_PX, PAGE_ITEM_CAPACITY } from '../lib/workspace-constants';
 import { PageCard } from './PageCard';
 
-interface LowerStackPanelProps {
+interface NotebookProps {
   pages: GroupPage[];
   ticks: Record<string, boolean>;
   onRemoveItem: (itemId: string) => void;
@@ -52,7 +52,7 @@ export function Notebook({
   ticks,
   onRemoveItem,
   onToggleTick,
-}: LowerStackPanelProps) {
+}: NotebookProps) {
   const [focusedPageKey, setFocusedPageKey] = useState<string | null>(pages[0]?.key ?? null);
   const previousKeysRef = useRef<string[]>(pages.map((page) => page.key));
 
@@ -149,13 +149,17 @@ export function Notebook({
                 const distanceFromFocus = index - safeFocusedPageIndex;
                 const isPast = distanceFromFocus < 0;
                 const isCurrent = distanceFromFocus === 0;
-                const x = isPast ? -PAGE_CARD_WIDTH_PX : 0;
+                // With transformOrigin: 'left center', we don't need to manually translate x when flipping
+                const x = 0;
                 const y = 0;
                 const opacity = isCurrent ? 1 : 0.82;
+                
+                // For past pages (left stack), higher index = higher in stack (visible)
+                // For future pages (right stack), lower index = higher in stack (visible)
                 const zIndex = isCurrent
                   ? pages.length + 5
                   : isPast
-                    ? pages.length - index
+                    ? index
                     : pages.length - index;
 
                 return (
@@ -167,6 +171,7 @@ export function Notebook({
                       height: `${PAGE_CARD_HEIGHT_PX}px`,
                       zIndex,
                       transformStyle: 'preserve-3d',
+                      transformOrigin: 'left center',
                     }}
                     initial={false}
                     animate={{

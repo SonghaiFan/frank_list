@@ -7,7 +7,7 @@ import { AppHeader } from './components/AppHeader';
 import { ComparisonPanel } from './components/ComparisonPanel';
 import { GroupTabs } from './components/GroupTabs';
 import { GroupWorkspace } from './components/GroupWorkspace';
-import { LowerStackPanel } from './components/LowerStackPanel';
+import { Notebook } from './components/Notebook';
 import { ModalDialog } from './components/ModalDialog';
 import type { AppMode, Group, GroupPage, ItemOrigin, ItemOriginType, ListItem } from './lib/notebook-types';
 import { PAGE_ITEM_CAPACITY } from './lib/workspace-constants';
@@ -1047,7 +1047,7 @@ export default function App() {
             )}
           </AnimatePresence>
 
-          <LowerStackPanel
+          <Notebook
             pages={lowerStackPages}
             ticks={myTicks}
             onRemoveItem={removeItem}
