@@ -1,9 +1,11 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { motion } from 'motion/react';
 import type { GroupPage } from '../lib/notebook-types';
 import { PAGE_CARD_HEIGHT_PX, PAGE_CARD_WIDTH_PX, PAGE_ITEM_CAPACITY } from '../lib/workspace-constants';
 import { PageCard } from './PageCard';
+import { CardCover } from './CardCover';
+import { CardEnd } from './CardEnd';
 
 interface NotebookProps {
   pages: GroupPage[];
@@ -12,25 +14,6 @@ interface NotebookProps {
   onToggleTick: (itemId: string, e?: React.MouseEvent | React.ChangeEvent) => void;
 }
 
-
-function NotebookHoles({ side = 'left', height = 600 }: { side: 'left' | 'right', height?: number }) {
-  const LINE_HEIGHT = 36;
-  // Calculate count to match the lined paper grid
-  const count = Math.floor(height / LINE_HEIGHT);
-  
-  return (
-    <div 
-      className={`absolute top-0 bottom-0 w-8 z-30 flex flex-col pointer-events-none ${side === 'left' ? 'left-2' : 'right-2'}`} 
-      // Removed py-6 and justify-between to ensure strict alignment with paper lines
-    >
-      {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="w-full flex items-center justify-center" style={{ height: `${LINE_HEIGHT}px` }}>
-          <div className="h-3 w-3 bg-neutral-800 rounded-full opacity-10 shadow-inner transform scale-y-90" />
-        </div>
-      ))}
-    </div>
-  );
-}
 
 function NotebookSpine({ height = 600 }: { height?: number }) {
   const LINE_HEIGHT = 36;
@@ -53,43 +36,93 @@ export function Notebook({
   onRemoveItem,
   onToggleTick,
 }: NotebookProps) {
-  const [focusedPageKey, setFocusedPageKey] = useState<string | null>(pages[0]?.key ?? null);
-  const previousKeysRef = useRef<string[]>(pages.map((page) => page.key));
+  const allPages = useMemo(() => {
+    const coverPage: GroupPage = {
+      key: 'notebook-cover',
+      type: 'cover',
+      groupId: 'system',
+      groupTitle: 'Cover',
+      pageIndex: -1,
+      items: [],
+      isComplete: true,
+      isBound: true,
+    };
+    
+    const endPage: GroupPage = {
+      key: 'notebook-end',
+      type: 'end',
+      groupId: 'system',
+      groupTitle: 'End',
+      pageIndex: -2,
+      items: [],
+      isComplete: true,
+      isBound: true,
+    };
+    
+    return [coverPage, ...pages, endPage];
+  }, [pages]);
+
+  const [focusedPageKey, setFocusedPageKey] = useState<string | null>(allPages[allPages.length - 1]?.key ?? null);
+  const previousKeysRef = useRef<string[]>(allPages.map((page) => page.key));
 
   useEffect(() => {
-    if (pages.length === 0) {
-      setFocusedPageKey(null);
-      previousKeysRef.current = [];
-      return;
-    }
-
-    const nextKeys = pages.map((page) => page.key);
+    const nextKeys = allPages.map((page) => page.key);
     const newlyAddedKey = nextKeys.find((key) => !previousKeysRef.current.includes(key));
 
     setFocusedPageKey((currentKey) => {
-      if (newlyAddedKey) return newlyAddedKey;
-      if (currentKey && pages.some((page) => page.key === currentKey)) return currentKey;
-      return pages[Math.max(0, pages.length - 1)].key;
+      // If a new page is added (content page), focus it? 
+      // Or if it's the "End" page appearing for the first time?
+      if (newlyAddedKey && newlyAddedKey !== 'notebook-cover' && newlyAddedKey !== 'notebook-end') {
+         // When a content page is moved here, we probably want to see it?
+         // The original logic was: return pages[Math.max(0, pages.length - 1)].key;
+         // Meaning focus the last added page.
+         return newlyAddedKey;
+      }
+      
+      // If current key is still valid, keep it.
+      if (currentKey && allPages.some((page) => page.key === currentKey)) {
+          return currentKey;
+      }
+      // Default to the last page (End) or Cover?
+      // "Lower Stack" accumulates pages. When I move a page down, I expect to see it on top.
+      // But if I have Cover -> Page 1 -> End. 
+      // If I view the stack, typically I see the Top page (Cover).
+      // But the previous implementation logic was `pages[pages.length-1]`.
+      // If pages stack up 1, 2, 3... 
+      // If I want to see the "latest", I should focus the last one?
+      // But physically, 1 is at bottom? 
+      // The z-index logic in previous code:
+      // const zIndex = isCurrent ? ... : isPast ? index : pages.length - index;
+      // It seems to support a stack where you can focus any page.
+      // Let's stick to "focus the last page" (End) so we see the "End" of the notebook?
+      // Or maybe Cover?
+      // If it's a closed notebook, we see Cover.
+      // If it's open, we see pages.
+      // Let's default to Cover (key='notebook-cover') so it starts closed?
+      // But user might want to see content.
+      // Let's try defaulting to the *last* page (End), which means the notebook is fully "read"? 
+      // No, usually you add pages to the end.
+      // Let's default to 'notebook-cover' (first page) so it looks like a clean stack.
+      return allPages[0].key;
     });
 
     previousKeysRef.current = nextKeys;
-  }, [pages]);
+  }, [allPages]);
 
-  const focusedPageIndex = pages.findIndex((page) => page.key === focusedPageKey);
-  const safeFocusedPageIndex = focusedPageIndex === -1 ? Math.max(0, pages.length - 1) : focusedPageIndex;
+  const focusedPageIndex = allPages.findIndex((page) => page.key === focusedPageKey);
+  const safeFocusedPageIndex = focusedPageIndex === -1 ? 0 : focusedPageIndex;
   const canGoPrev = safeFocusedPageIndex > 0;
-  const canGoNext = safeFocusedPageIndex < pages.length - 1;
+  const canGoNext = safeFocusedPageIndex < allPages.length - 1;
 
   const goPrevPage = () => {
-    const prevPage = pages[safeFocusedPageIndex - 1];
+    const prevPage = allPages[safeFocusedPageIndex - 1];
     if (prevPage) setFocusedPageKey(prevPage.key);
   };
 
   const goNextPage = () => {
-    const nextPage = pages[safeFocusedPageIndex + 1];
+    const nextPage = allPages[safeFocusedPageIndex + 1];
     if (nextPage) setFocusedPageKey(nextPage.key);
   };
-  const spreadHalfGap = 0;
 
   return (
     <div className="mt-10">
@@ -103,7 +136,7 @@ export function Notebook({
             <div className="list-text">Moved Pages</div>
             <div className="ui-mono opacity-45">{pages.length} pages moved here</div>
           </div>
-          {pages.length > 1 && (
+          {allPages.length > 1 && (
             <div className="relative z-[3] flex gap-2.5">
               <motion.button
                 whileHover={{ y: -1 }}
@@ -133,34 +166,20 @@ export function Notebook({
         <div className="relative min-h-[720px] overflow-visible rounded-[28px] bg-neutral-100/50 shadow-inner px-4 py-14 border border-neutral-200/50">
           <NotebookSpine />
           
-          {pages.length === 0 ? (
-            <div
-              className="mx-auto flex items-center justify-center rounded-[6px] border-2 border-dashed border-neutral-300/50 bg-white/55 px-6 text-center"
-              style={{ width: `${PAGE_CARD_WIDTH_PX}px`, minHeight: `${PAGE_CARD_HEIGHT_PX}px` }}
-            >
-              <div>
-                <div className="list-text text-neutral-500">还没有移下来的 page</div>
-                <div className="ui-mono mt-2 opacity-45">在下方取消任意 item 后，这一页会自动回到上方。</div>
-              </div>
-            </div>
-          ) : (
-            <div className="relative min-h-[620px] perspective-[2000px]">
-              {pages.map((page, index) => {
+          <div className="relative min-h-[620px] perspective-[2000px]">
+              {allPages.map((page, index) => {
                 const distanceFromFocus = index - safeFocusedPageIndex;
                 const isPast = distanceFromFocus < 0;
                 const isCurrent = distanceFromFocus === 0;
-                // With transformOrigin: 'left center', we don't need to manually translate x when flipping
                 const x = 0;
                 const y = 0;
                 const opacity = isCurrent ? 1 : 0.82;
                 
-                // For past pages (left stack), higher index = higher in stack (visible)
-                // For future pages (right stack), lower index = higher in stack (visible)
                 const zIndex = isCurrent
-                  ? pages.length + 5
+                  ? allPages.length + 5
                   : isPast
                     ? index
-                    : pages.length - index;
+                    : allPages.length - index;
 
                 return (
                   <motion.div
@@ -187,41 +206,58 @@ export function Notebook({
                       className="absolute inset-0 [backface-visibility:hidden]"
                       style={{ pointerEvents: isCurrent ? 'auto' : 'none' }}
                     >
-                      <NotebookHoles side="left" />
-                      <PageCard
-                        page={page}
-                        pageSize={PAGE_ITEM_CAPACITY}
-                        interactive={isCurrent}
-                        isActive={isCurrent}
-                        showAddItemInput={false}
-                        ticks={ticks}
-                        onRemoveItem={onRemoveItem}
-                        onToggleTick={onToggleTick}
-                      />
+                      {/* Front of the page */}
+                      {page.type === 'cover' ? (
+                        <CardCover isActive={isCurrent} />
+                      ) : page.type === 'end' ? (
+                        <CardEnd isActive={isCurrent} />
+                      ) : (
+                        <PageCard
+                          page={page}
+                          pageSize={PAGE_ITEM_CAPACITY}
+                          interactive={isCurrent}
+                          isActive={isCurrent}
+                          showAddItemInput={false}
+                          ticks={ticks}
+                          onRemoveItem={onRemoveItem}
+                          onToggleTick={onToggleTick}
+                        />
+                      )}
                     </div>
                     <div
                       className="absolute inset-0 rounded-[6px] border border-[rgba(0,47,167,0.08)] bg-[linear-gradient(180deg,#f9fafc,#f1f2f5)] shadow-[0_26px_44px_rgba(0,47,167,0.08)] [backface-visibility:hidden]"
                       style={{ transform: 'rotateY(180deg)' }}
                     >
-                      <NotebookHoles side="right" />
+                      {/* Back of the page */}
                       <div className="absolute inset-y-0 left-[50px] w-px bg-[rgba(0,47,167,0.05)]" />
                       <div className="flex h-full flex-col justify-between px-12 py-10 text-neutral-400">
-                        <div>
-                          <div className="ui-label">Back</div>
-                          <div className="list-text mt-3 text-neutral-500">
-                            {page.groupTitle} · 第 {page.pageIndex + 1} 页
-                          </div>
-                        </div>
-                        <div className="ui-mono opacity-55">
-                          {page.items.length} / {PAGE_ITEM_CAPACITY}
-                        </div>
+                        {page.type === 'cover' ? (
+                            <div className="flex flex-col h-full justify-center items-center">
+                                <div className="text-neutral-300 font-mono text-sm">INDEX</div>
+                            </div>
+                        ) : page.type === 'end' ? (
+                            <div className="flex flex-col h-full justify-center items-center">
+                                <div className="text-neutral-300 font-mono text-xs">BACK COVER</div>
+                            </div>
+                        ) : (
+                           <>
+                            <div>
+                                <div className="ui-label">Back</div>
+                                <div className="list-text mt-3 text-neutral-500">
+                                    {page.groupTitle} · 第 {page.pageIndex + 1} 页
+                                </div>
+                            </div>
+                            <div className="ui-mono opacity-55">
+                                {page.items.length} / {PAGE_ITEM_CAPACITY}
+                            </div>
+                           </>
+                        )}
                       </div>
                     </div>
                   </motion.div>
                 );
               })}
             </div>
-          )}
         </div>
       </div>
     </div>

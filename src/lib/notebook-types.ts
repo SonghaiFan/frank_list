@@ -20,6 +20,7 @@ export interface Group {
 
 export interface GroupPage {
   key: string;
+  type?: 'content' | 'cover' | 'end';
   groupId: string;
   groupTitle: string;
   pageIndex: number;
