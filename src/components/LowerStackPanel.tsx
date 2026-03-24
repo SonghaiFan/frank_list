@@ -93,16 +93,9 @@ export function Notebook({
 
   return (
     <div className="mt-10">
-      <div className="mb-4 px-2">
-        <div className="ui-label">Lower Stack</div>
-        <div className="ui-mono opacity-45">上面的 page 完成后，会直接移动到下面这个 stack。</div>
-      </div>
       <div className="relative overflow-visible rounded-[32px] border border-neutral-200/80 bg-white/78 px-6 pb-8 pt-6 shadow-[0_30px_65px_rgba(0,47,167,0.08)] backdrop-blur-sm">
         <div className="mb-5 flex items-center justify-between gap-4">
-          <div>
-            <div className="list-text">Moved Pages</div>
-            <div className="ui-mono opacity-45">{pages.length} pages moved here</div>
-          </div>
+    
           {pages.length > 1 && (
             <div className="relative z-[3] flex gap-2.5">
               <motion.button

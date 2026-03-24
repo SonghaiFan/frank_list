@@ -52,58 +52,16 @@ export function GroupWorkspace({
   onAddItem,
 }: GroupWorkspaceProps) {
   return (
-    <>
-      <div className="mb-4 rounded-[28px] border border-neutral-200/80 bg-white/85 px-5 py-4 shadow-[0_24px_50px_rgba(0,47,167,0.06)] backdrop-blur-sm">
-        <div className="flex items-center justify-between gap-4">
-          <div className="min-w-0">
-            {editingGroupId === activeGroup.id ? (
-              <input
-                autoFocus
-                type="text"
-                value={groupTitleDraft}
-                onChange={(e) => onDraftChange(e.target.value)}
-                onBlur={onRenameSave}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') onRenameSave();
-                  if (e.key === 'Escape') onRenameCancel();
-                }}
-                className="list-text w-full bg-transparent border-none outline-none"
-              />
-            ) : (
-              <button
-                type="button"
-                onClick={onRenameStart}
-                className="list-text truncate-text text-left hover:text-klein transition-colors"
-                title="点击重命名这一组"
-              >
-                {activeGroup.title}
-              </button>
-            )}
-            <div className="ui-mono opacity-45 truncate-text">{activeGroup.id}</div>
-          </div>
-          <div className="flex items-center gap-3 shrink-0">
-            <div className="ui-mono opacity-50">
-              [{activeGroup.items.length} items / {activeGroupPages.length} pages / {boundPageCount} bound]
-            </div>
-            {mode === 'edit' && activeGroup.id !== '0' && (
-              <button
-                onClick={onDeleteGroup}
-                className="text-neutral-300 hover:text-klein transition-colors"
-                title="Delete Group"
-              >
-                <Trash2 size={16} />
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
+    <motion.div
+      initial={{ opacity: 0, scale: 0.9, y: 200 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.9, y: 200, transition: { duration: 0.2 } }}
+      transition={{ type: 'spring', stiffness: 200, damping: 25 }}
+    >
 
-      <AnimatePresence mode="wait">
-        <motion.div
+
+      <div
           key={`group-${activeGroup.id}`}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
           className="space-y-5"
           ref={paperRef}
         >
@@ -128,8 +86,7 @@ export function GroupWorkspace({
             onRemoveItem={onRemoveItem}
             onToggleTick={onToggleTick}
           />
-        </motion.div>
-      </AnimatePresence>
-    </>
+      </div>
+    </motion.div>
   );
 }
