@@ -124,7 +124,6 @@ export function CardStack({
               title="Add new page"
             >
               <Plus size={18} />
-              <span className="ui-mono text-[11px]">NEW</span>
             </button>
           ) : (
             <button
@@ -145,7 +144,6 @@ export function CardStack({
               title="Add new page"
             >
               <Plus size={18} />
-              <span className="ui-mono text-[11px]">NEW</span>
             </button>
           ) : (
             <button
