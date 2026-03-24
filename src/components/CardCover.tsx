@@ -6,11 +6,15 @@ import { PAGE_CARD_HEIGHT_PX, PAGE_CARD_WIDTH_PX } from '../lib/workspace-consta
 interface CardCoverProps {
   className?: string;
   isActive?: boolean;
+  layoutId?: string;
+  title?: string;
 }
 
 export const CardCover = forwardRef<HTMLDivElement, CardCoverProps>(({
   className,
   isActive = true,
+  layoutId,
+  title = 'Notebook',
 }, ref) => {
   return (
     <motion.div
@@ -21,12 +25,12 @@ export const CardCover = forwardRef<HTMLDivElement, CardCoverProps>(({
       )}
       style={{ width: `${PAGE_CARD_WIDTH_PX}px`, height: `${PAGE_CARD_HEIGHT_PX}px` }}
       layout
-      layoutId="notebook-cover"
+      layoutId={layoutId}
       transition={{ type: 'spring', stiffness: 260, damping: 30 }}
     >
       <div className="absolute inset-0 opacity-10 pointer-events-none bg-gradient-to-br from-black/5 to-transparent" />
       <div className="relative z-10 px-12">
-        <h1 className="text-4xl font-bold text-klein/90 mb-4 tracking-tight">Notebook</h1>
+        <h1 className="text-4xl font-bold text-klein/90 mb-4 tracking-tight">{title}</h1>
         <p className="text-neutral-400 font-mono text-sm uppercase tracking-widest">
           Frank List
         </p>

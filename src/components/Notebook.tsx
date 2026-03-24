@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { motion } from 'motion/react';
+import { cn } from '../lib/cn';
 import type { GroupPage } from '../lib/notebook-types';
 import { PAGE_CARD_HEIGHT_PX, PAGE_CARD_WIDTH_PX, PAGE_ITEM_CAPACITY } from '../lib/workspace-constants';
 import { PageCard } from './PageCard';
@@ -8,7 +9,10 @@ import { CardCover } from './CardCover';
 import { CardEnd } from './CardEnd';
 
 interface NotebookProps {
+  className?: string;
   closed?: boolean;
+  coverTitle?: string;
+  onOpen?: () => void;
   pages: GroupPage[];
   ticks: Record<string, boolean>;
   onRemoveItem: (itemId: string) => void;
@@ -31,8 +35,14 @@ function NotebookSpine({ height = 600 }: { height?: number }) {
   );
 }
 
+const COLLECTION_STEP_MS = 140;
+const COLLECTION_BASE_MS = 980;
+
 export function Notebook({
+  className,
   closed = false,
+  coverTitle,
+  onOpen,
   pages,
   ticks,
   onRemoveItem,
@@ -65,60 +75,64 @@ export function Notebook({
   }, [pages]);
 
   const [focusedPageKey, setFocusedPageKey] = useState<string | null>(allPages[0]?.key ?? null);
+  const [collectionState, setCollectionState] = useState<{ active: boolean; incomingKeys: string[] }>({
+    active: false,
+    incomingKeys: [],
+  });
   const previousKeysRef = useRef<string[]>(allPages.map((page) => page.key));
+  const collectionTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     const nextKeys = allPages.map((page) => page.key);
-    const newlyAddedKey = nextKeys.find((key) => !previousKeysRef.current.includes(key));
+    const newlyAddedKeys = nextKeys.filter(
+      (key) => !previousKeysRef.current.includes(key) && key !== 'notebook-cover' && key !== 'notebook-end'
+    );
 
-    setFocusedPageKey((currentKey) => {
-      if (closed) {
-        return allPages[0]?.key ?? null;
-      }
+    if (closed) {
+      setCollectionState({ active: false, incomingKeys: [] });
+      setFocusedPageKey(allPages[0]?.key ?? null);
+      previousKeysRef.current = nextKeys;
+      return;
+    }
 
-      // If a new page is added (content page), focus it? 
-      // Or if it's the "End" page appearing for the first time?
-      if (newlyAddedKey && newlyAddedKey !== 'notebook-cover' && newlyAddedKey !== 'notebook-end') {
-         // When a content page is moved here, we probably want to see it?
-         // The original logic was: return pages[Math.max(0, pages.length - 1)].key;
-         // Meaning focus the last added page.
-         return newlyAddedKey;
-      }
-      
-      // If current key is still valid, keep it.
-      if (currentKey && allPages.some((page) => page.key === currentKey)) {
-          return currentKey;
-      }
-      // Default to the last page (End) or Cover?
-      // "Lower Stack" accumulates pages. When I move a page down, I expect to see it on top.
-      // But if I have Cover -> Page 1 -> End. 
-      // If I view the stack, typically I see the Top page (Cover).
-      // But the previous implementation logic was `pages[pages.length-1]`.
-      // If pages stack up 1, 2, 3... 
-      // If I want to see the "latest", I should focus the last one?
-      // But physically, 1 is at bottom? 
-      // The z-index logic in previous code:
-      // const zIndex = isCurrent ? ... : isPast ? index : pages.length - index;
-      // It seems to support a stack where you can focus any page.
-      // Let's stick to "focus the last page" (End) so we see the "End" of the notebook?
-      // Or maybe Cover?
-      // If it's a closed notebook, we see Cover.
-      // If it's open, we see pages.
-      // Let's default to Cover (key='notebook-cover') so it starts closed?
-      // But user might want to see content.
-      // Let's try defaulting to the *last* page (End), which means the notebook is fully "read"? 
-      // No, usually you add pages to the end.
-      // Let's default to 'notebook-cover' (first page) so it looks like a clean stack.
-      return allPages[0].key;
-    });
+    if (collectionTimeoutRef.current) {
+      window.clearTimeout(collectionTimeoutRef.current);
+      collectionTimeoutRef.current = null;
+    }
+
+    if (newlyAddedKeys.length > 0) {
+      const newestKey = newlyAddedKeys[newlyAddedKeys.length - 1] ?? null;
+      setCollectionState({ active: true, incomingKeys: newlyAddedKeys });
+      setFocusedPageKey(newestKey);
+      collectionTimeoutRef.current = window.setTimeout(() => {
+        setCollectionState({ active: false, incomingKeys: [] });
+        collectionTimeoutRef.current = null;
+      }, COLLECTION_BASE_MS + COLLECTION_STEP_MS * Math.max(0, newlyAddedKeys.length - 1));
+    } else {
+      setCollectionState((current) => (current.active ? { active: false, incomingKeys: [] } : current));
+      setFocusedPageKey((currentKey) => (
+        currentKey && allPages.some((page) => page.key === currentKey)
+          ? currentKey
+          : allPages[0]?.key ?? null
+      ));
+    }
 
     previousKeysRef.current = nextKeys;
-  }, [allPages]);
+  }, [allPages, closed]);
+
+  useEffect(() => {
+    return () => {
+      if (collectionTimeoutRef.current) {
+        window.clearTimeout(collectionTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const focusedPageIndex = allPages.findIndex((page) => page.key === focusedPageKey);
   const safeFocusedPageIndex = focusedPageIndex === -1 ? 0 : focusedPageIndex;
   const canGoPrev = !closed && safeFocusedPageIndex > 0;
   const canGoNext = !closed && safeFocusedPageIndex < allPages.length - 1;
+  const isCollecting = collectionState.active && !closed;
 
   const goPrevPage = () => {
     const prevPage = allPages[safeFocusedPageIndex - 1];
@@ -133,7 +147,10 @@ export function Notebook({
   return (
     <motion.div 
       layout
-      className="relative flex min-h-[700px] w-full items-start justify-center perspective-[2000px] mt-10"
+      className={cn(
+        'relative flex min-h-[700px] w-full items-start justify-center perspective-[2000px] mt-10',
+        className
+      )}
       initial={{ opacity: 0, scale: 0.9, y: -200 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.9, y: -200 }}
@@ -167,6 +184,28 @@ export function Notebook({
             </>
           )}
 
+          <motion.div
+            className="relative w-full flex justify-center"
+            style={{ transformStyle: 'preserve-3d' }}
+            animate={isCollecting ? {
+              x: [0, 18, 0],
+              y: [0, -20, 0],
+              rotateZ: [0, 4, 0],
+              rotateX: [0, 8, 0],
+              scale: [1, 1.02, 1],
+            } : {
+              x: closed ? -PAGE_CARD_WIDTH_PX / 2 : 0,
+              y: 0,
+              rotateZ: 0,
+              rotateX: 0,
+              scale: 1,
+            }}
+            transition={{
+              duration: 1.05,
+              times: [0, 0.58, 1],
+              ease: [0.22, 1, 0.36, 1],
+            }}
+          >
           <NotebookSpine />
           
           <div className="relative w-full h-[620px] max-w-[500px] perspective-[2000px]">
@@ -177,6 +216,10 @@ export function Notebook({
                 const x = closed ? Math.min(index * 2.5, 18) : 0;
                 const y = closed ? Math.min(index * 0.8, 8) : 0;
                 const opacity = closed ? Math.max(0.72, 1 - index * 0.03) : isCurrent ? 1 : 0.82;
+                const rotateY = closed ? 0 : isPast ? -180 : 0;
+                const collectionIndex = collectionState.incomingKeys.indexOf(page.key);
+                const isIncoming = collectionIndex !== -1;
+                const coverMidRotateY = rotateY === 0 ? -105 : -75;
                 
                 const zIndex = closed
                   ? allPages.length - index
@@ -199,14 +242,42 @@ export function Notebook({
                       transformOrigin: 'left center',
                     }}
                     initial={false}
-                    animate={{
+                    animate={isCollecting && page.type === 'cover' ? {
                       x,
                       y,
-                      rotateY: closed ? 0 : isPast ? -180 : 0,
+                      rotateY: [rotateY, coverMidRotateY, rotateY],
+                      rotateZ: [0, -3, 0],
                       opacity,
+                    } : isCollecting && isIncoming ? {
+                      x: [-240, 20, x],
+                      y: [-120, 10, y],
+                      rotateY,
+                      rotateZ: [-18, 6, 0],
+                      opacity: [0, 1, opacity],
+                      scale: [0.9, 1.03, 1],
+                    } : {
+                      x,
+                      y,
+                      rotateY,
+                      rotateZ: 0,
+                      opacity,
+                      scale: 1,
                     }}
-                    transition={{ type: 'spring', stiffness: 220, damping: 28 }}
-                    onClick={closed ? undefined : () => setFocusedPageKey(page.key)}
+                    transition={isCollecting && page.type === 'cover'
+                      ? {
+                          duration: 0.92,
+                          times: [0, 0.5, 1],
+                          ease: [0.22, 1, 0.36, 1],
+                        }
+                      : isCollecting && isIncoming
+                        ? {
+                            duration: 0.88,
+                            delay: collectionIndex * 0.14,
+                            times: [0, 0.78, 1],
+                            ease: [0.16, 1, 0.3, 1],
+                          }
+                        : { type: 'spring', stiffness: 220, damping: 28 }}
+                    onClick={closed ? onOpen : () => setFocusedPageKey(page.key)}
                   >
                     <div
                       className="absolute inset-0 [backface-visibility:hidden]"
@@ -214,7 +285,11 @@ export function Notebook({
                     >
                       {/* Front of the page */}
                       {page.type === 'cover' ? (
-                        <CardCover isActive={isCurrent} />
+                        <CardCover 
+                          isActive={isCurrent} 
+                          title={coverTitle} 
+                          layoutId={`cover-${pages[0]?.groupId || 'default'}`}
+                        />
                       ) : page.type === 'end' ? (
                         <CardEnd isActive={isCurrent} />
                       ) : (
@@ -264,6 +339,7 @@ export function Notebook({
                 );
               })}
             </div>
+            </motion.div>
     </motion.div>
   );
 }

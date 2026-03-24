@@ -1024,7 +1024,6 @@ export default function App() {
 
     setGroups(nextGroups);
     setActiveGroupId(fallbackGroup.id);
-    setViewMode('grid'); // Reset to grid after delete
     setMyTicks((prev) => {
       const next = { ...prev };
       activeGroup.items.forEach((item) => {
@@ -1098,19 +1097,27 @@ export default function App() {
              exit={{ opacity: 0 }}
           >
         
-          <LayoutGroup id={`workspace-notebook-${activeGroup.id}`}>
-            <motion.div
-              layout
-              transition={{ layout: { type: 'spring', stiffness: 210, damping: 28 } }}
-            >
-              <AnimatePresence mode="sync">
-                {mode === 'compare-result' && comparison ? (
+          <LayoutGroup id="workspace-main">
+            <AnimatePresence mode="popLayout" initial={false}>
+              {mode === 'compare-result' && comparison ? (
+                <motion.div key="comparison" layout className="w-full max-w-[1240px]">
                   <ComparisonPanel comparison={comparison} group={activeGroup} />
-                ) : !isGalleryClosed ? (
+                </motion.div>
+              ) : !isGalleryClosed ? (
+                <motion.div
+                  key="open-workspace"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="w-full flex flex-col items-center min-h-[80vh] cursor-zoom-out"
+                  onClick={() => setIsGalleryClosed(true)}
+                >
                   <motion.div
                     key={activeGroup.id}
                     layout
                     transition={{ layout: { type: 'spring', stiffness: 210, damping: 28 } }}
+                    onClick={(e) => e.stopPropagation()}
+                    className="cursor-default w-full max-w-[800px]"
                   >
                     <GroupWorkspace
                       activeGroup={activeGroup}
@@ -1136,33 +1143,87 @@ export default function App() {
                       onToggleTick={toggleTick}
                     />
                   </motion.div>
-                ) : (
-                  <motion.div
-                    key={`closed-gallery-${activeGroup.id}`}
-                    layout
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 20 }}
-                    transition={{ layout: { type: 'spring', stiffness: 210, damping: 28 } }}
-                    className="pb-2"
-                  />
-                )}
-              </AnimatePresence>
-            </motion.div>
 
-            <motion.div
-              key={`notebook-${activeGroup.id}`}
-              layout
-              transition={{ layout: { type: 'spring', stiffness: 210, damping: 28 } }}
-            >
-              <Notebook
-                closed={isGalleryClosed}
-                pages={notebookPages}
-                ticks={myTicks}
-                onRemoveItem={removeItem}
-                onToggleTick={toggleTick}
-              />
-            </motion.div>
+                  <motion.div
+                    key={`notebook-${activeGroup.id}`}
+                    layoutId={`notebook-${activeGroup.id}`}
+                    layout
+                    transition={{ layout: { type: 'spring', stiffness: 210, damping: 28 } }}
+                    className="w-full flex justify-center cursor-default max-w-[800px]"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Notebook
+                      closed={false}
+                      coverTitle={activeGroup.title}
+                      pages={lowerStackPages}
+                      ticks={myTicks}
+                      onRemoveItem={removeItem}
+                      onToggleTick={toggleTick}
+                    />
+                  </motion.div>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="closed-gallery"
+                  className="grid grid-cols-2 gap-x-8 gap-y-12 w-full max-w-[1000px] mx-auto items-start justify-items-center pt-10 px-4"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                >
+                  {groups.map((group) => {
+                    const groupPages = getGroupPages(
+                      group,
+                      myTicks,
+                      boundPages,
+                      extraPageCounts[group.id] ?? 0
+                    );
+                    return (
+                      <motion.div
+                        key={group.id}
+                        layoutId={`notebook-${group.id}`}
+                        className="w-full flex justify-center"
+                        transition={{ layout: { type: 'spring', stiffness: 210, damping: 28 } }}
+                        title={group.title}
+                      >
+                        <Notebook
+                          className="min-h-[460px] scale-[0.85] origin-top mt-0"
+                          closed={true}
+                          coverTitle={group.title}
+                          pages={groupPages}
+                          ticks={myTicks}
+                          onRemoveItem={removeItem}
+                          onToggleTick={toggleTick}
+                          onOpen={() => {
+                            setActiveGroupId(group.id);
+                            setIsGalleryClosed(false);
+                          }}
+                        />
+                      </motion.div>
+                    );
+                  })}
+                  
+                  <motion.div 
+                     layout
+                     className="w-full aspect-[3/4] max-w-[360px] border-2 border-dashed border-neutral-200 rounded-[20px] flex flex-col items-center justify-center text-neutral-300 cursor-pointer hover:border-klein hover:text-klein hover:bg-klein/5 transition-all opacity-80 hover:opacity-100 scale-[0.85] origin-top min-h-[460px]"
+                     onClick={() => {
+                       const newGroupId = randomId(6);
+                       const newGroup: Group = {
+                         id: newGroupId,
+                         title: 'New Notebook',
+                         items: []
+                       };
+                       setGroups(prev => [...prev, newGroup]);
+                       setActiveGroupId(newGroup.id);
+                       // Don't open immediately? Or do?
+                       // Let's stay in gallery view so they can see it added.
+                     }}
+                  >
+                     <span className="text-5xl font-light mb-4">+</span>
+                     <span className="font-bold text-lg">New Notebook</span>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </LayoutGroup>
 
         </motion.div>
