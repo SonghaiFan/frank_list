@@ -158,6 +158,12 @@ export function PageCard({
               />
             </div>
           )}
+          
+          <div className="mt-auto px-8 pb-6 flex justify-end opacity-40">
+            <span className="ui-mono text-[10px] tracking-[0.2em] text-neutral-400 font-medium">
+              PAGE {String(page.pageIndex + 1).padStart(2, '0')}
+            </span>
+          </div>
         </div>
       </div>
     </motion.div>
