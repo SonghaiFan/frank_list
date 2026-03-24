@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Share2, Copy, Check, Plus, Trash2, ArrowLeft, Users, Heart, Info, X, QrCode, RotateCcw } from 'lucide-react';
 import LZString from 'lz-string';
 import { QRCodeCanvas } from 'qrcode.react';
-import ConfettiPhysics, { ConfettiPhysicsRef } from './components/ConfettiPhysics';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -138,8 +137,7 @@ export default function App() {
   const [mode, setMode] = useState<'edit' | 'compare-step-1' | 'compare-result'>('edit');
   const [copySuccess, setCopySuccess] = useState(false);
   const [showQrCode, setShowQrCode] = useState(false);
-  const [newItemText, setNewItemText] = useState('');
-  const confettiRef = useRef<ConfettiPhysicsRef>(null);
+  const [newItemText, setNewItemText] = useState(''); 
   const paperRef = useRef<HTMLDivElement>(null);
 
   // Initialize from URL and LocalStorage
@@ -547,7 +545,6 @@ export default function App() {
             </motion.div>
           )}
         </AnimatePresence>
-        <ConfettiPhysics ref={confettiRef} notebookRef={paperRef} />
       </motion.div>
     </div>
   );
