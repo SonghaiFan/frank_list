@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { motion } from 'motion/react';
+import { MOTION_LAYOUT_SPRING } from '../lib/motion';
 import type { AppMode, GroupPage } from '../lib/notebook-types';
 import { cn } from '../lib/cn';
 import { PAGE_CARD_HEIGHT_PX, PAGE_CARD_WIDTH_PX } from '../lib/workspace-constants';
@@ -178,7 +179,7 @@ export function CardStack({
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: isVisible ? 1 : 0, y: 0 }}
             layout
-            transition={{ type: 'spring', stiffness: 260, damping: 28 }}
+            transition={MOTION_LAYOUT_SPRING}
             onClick={() => setFocusedPageKey(page.key)}
           >
             <PageCard

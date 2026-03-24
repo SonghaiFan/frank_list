@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { Plus, X } from 'lucide-react';
 import type { AppMode, GroupPage } from '../lib/notebook-types';
 import { cn } from '../lib/cn';
+import { MOTION_LAYOUT_SPRING } from '../lib/motion';
 import { getMarkerStyle, getOriginDotClassName, getOriginLabel } from '../lib/notebook-ui';
 import { PAGE_CARD_HEIGHT_PX, PAGE_CARD_WIDTH_PX } from '../lib/workspace-constants';
 
@@ -51,7 +52,7 @@ export function PageCard({
       style={{ width: `${PAGE_CARD_WIDTH_PX}px`, height: `${PAGE_CARD_HEIGHT_PX}px` }}
       layout
       layoutId={`page-card-${page.key}`}
-      transition={{ type: 'spring', stiffness: 260, damping: 30 }}
+      transition={MOTION_LAYOUT_SPRING}
     >
       <div className="paper-lines">
         <div className="paper-content flex h-full flex-col">

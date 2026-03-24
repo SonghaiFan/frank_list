@@ -1,6 +1,6 @@
 import React from 'react';
-import { AnimatePresence, motion } from 'motion/react';
-import { Trash2 } from 'lucide-react';
+import { motion } from 'motion/react';
+import { MOTION_PANEL_SPRING } from '../lib/motion';
 import type { AppMode, Group, GroupPage } from '../lib/notebook-types';
 import { CardStack } from './CardStack';
 
@@ -53,10 +53,11 @@ export function GroupWorkspace({
 }: GroupWorkspaceProps) {
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.9, y: 200 }}
+      layout
+      initial={false}
       animate={{ opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.9, y: 200, transition: { duration: 0.2 } }}
-      transition={{ type: 'spring', stiffness: 200, damping: 25 }}
+      exit={{ opacity: 0, scale: 0.98, y: 18 }}
+      transition={MOTION_PANEL_SPRING}
     >
 
 

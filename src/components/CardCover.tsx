@@ -1,6 +1,7 @@
 import React, { forwardRef } from 'react';
 import { motion } from 'motion/react';
 import { cn } from '../lib/cn';
+import { MOTION_LAYOUT_SPRING } from '../lib/motion';
 import { PAGE_CARD_HEIGHT_PX, PAGE_CARD_WIDTH_PX } from '../lib/workspace-constants';
 
 interface CardCoverProps {
@@ -22,7 +23,7 @@ export const CardCover = forwardRef<HTMLDivElement, CardCoverProps>(({
       style={{ width: `${PAGE_CARD_WIDTH_PX}px`, height: `${PAGE_CARD_HEIGHT_PX}px` }}
       layout
       layoutId="notebook-cover"
-      transition={{ type: 'spring', stiffness: 260, damping: 30 }}
+      transition={MOTION_LAYOUT_SPRING}
     >
       <div className="absolute inset-0 opacity-10 pointer-events-none bg-gradient-to-br from-black/5 to-transparent" />
       <div className="relative z-10 px-12">
