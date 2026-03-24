@@ -7,15 +7,18 @@ import { getMarkerStyle, getOriginDotClassName, getOriginLabel } from '../lib/no
 import { PAGE_CARD_HEIGHT_PX, PAGE_CARD_WIDTH_PX } from '../lib/workspace-constants';
 
 interface PageCardProps {
+  children?: React.ReactNode;
   className?: string;
   interactive?: boolean;
   isActive?: boolean;
   mode?: AppMode;
   newItemText?: string;
-  page: GroupPage;
-  pageSize: number;
+  page?: GroupPage;
+  pageSize?: number;
   showAddItemInput?: boolean;
   ticks?: Record<string, boolean>;
+  variant?: 'card' | 'flat';
+  isBack?: boolean;
   onAddItem?: () => void;
   onBindPage?: (pageKey: string) => void;
   onItemTextChange?: (value: string) => void;
@@ -24,15 +27,18 @@ interface PageCardProps {
 }
 
 export function PageCard({
+  children,
   className,
   interactive = true,
   isActive = true,
   mode = 'edit',
   newItemText = '',
   page,
-  pageSize,
+  pageSize = PAGE_ITEM_CAPACITY,
   showAddItemInput = false,
   ticks = {},
+  variant = 'card',
+  isBack = false,
   onAddItem,
   onBindPage,
   onItemTextChange,
@@ -45,15 +51,23 @@ export function PageCard({
     <motion.div
       ref={cardRef}
       className={cn(
-        'hybrid-paper mx-auto',
+        'paper-sheet bg-white',
+        variant === 'card' && 'paper-elevation my-8 mx-auto',
+        variant === 'flat' && 'h-full border border-[rgba(0,47,167,0.1)]', 
+        isBack && 'spine-right',
         className
       )}
-      style={{ width: `${PAGE_CARD_WIDTH_PX}px`, height: `${PAGE_CARD_HEIGHT_PX}px` }}
+      style={{ width: variant === 'card' ? `${PAGE_CARD_WIDTH_PX}px` : '100%', height: variant === 'card' ? `${PAGE_CARD_HEIGHT_PX}px` : '100%' }}
       layout
-      layoutId={`page-card-${page.key}`}
+      layoutId={page ? `page-card-${page.key}` : undefined}
       transition={{ type: 'spring', stiffness: 260, damping: 30 }}
     >
       <div className="paper-lines">
+        {children ? (
+            <div className="paper-content h-full flex flex-col">
+                {children}
+            </div>
+        ) : page ? (
         <div className="paper-content flex h-full flex-col">
           <div className="mx-auto mb-[0.55rem] flex min-h-[calc(var(--paper-line-height)*1.5)] max-w-[550px] items-start justify-between gap-4 border-b border-[rgba(0,47,167,0.08)] px-[0.4rem] pb-[0.65rem] pt-[0.85rem] max-md:flex-col max-md:items-start max-md:pr-0">
             <motion.div layout>
@@ -167,6 +181,7 @@ export function PageCard({
             </div>
           )}
         </div>
+        ) : null}
       </div>
     </motion.div>
   );

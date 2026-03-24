@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { motion } from 'motion/react';
 import type { GroupPage } from '../lib/notebook-types';
-import { PAGE_CARD_HEIGHT_PX, PAGE_CARD_WIDTH_PX, PAGE_ITEM_CAPACITY } from '../lib/workspace-constants';
+import { PAGE_CARD_HEIGHT_PX, PAGE_CARD_WIDTH_PX, PAGE_ITEM_CAPACITY, PAGE_LINE_HEIGHT_PX } from '../lib/workspace-constants';
 import { PageCard } from './PageCard';
 
 interface NotebookProps {
@@ -13,18 +13,16 @@ interface NotebookProps {
 }
 
 
-function NotebookHoles({ side = 'left', height = 600 }: { side: 'left' | 'right', height?: number }) {
-  const LINE_HEIGHT = 36;
+function NotebookHoles({ side = 'left', height = PAGE_CARD_HEIGHT_PX, className = '' }: { side: 'left' | 'right', height?: number, className?: string }) {
   // Calculate count to match the lined paper grid
-  const count = Math.floor(height / LINE_HEIGHT);
+  const count = Math.floor(height / PAGE_LINE_HEIGHT_PX);
   
   return (
     <div 
-      className={`absolute top-0 bottom-0 w-8 z-30 flex flex-col pointer-events-none ${side === 'left' ? 'left-2' : 'right-2'}`} 
-      // Removed py-6 and justify-between to ensure strict alignment with paper lines
+      className={`absolute w-8 z-30 flex flex-col pointer-events-none ${side === 'left' ? 'left-2' : 'right-2'} ${className}`} 
     >
       {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="w-full flex items-center justify-center" style={{ height: `${LINE_HEIGHT}px` }}>
+        <div key={i} className="w-full flex items-center justify-center" style={{ height: `${PAGE_LINE_HEIGHT_PX}px` }}>
           <div className="h-3 w-3 bg-neutral-800 rounded-full opacity-10 shadow-inner transform scale-y-90" />
         </div>
       ))}
@@ -32,14 +30,13 @@ function NotebookHoles({ side = 'left', height = 600 }: { side: 'left' | 'right'
   );
 }
 
-function NotebookSpine({ height = 600 }: { height?: number }) {
-  const LINE_HEIGHT = 36;
-  const count = Math.floor(height / LINE_HEIGHT);
+function NotebookSpine({ height = PAGE_CARD_HEIGHT_PX }: { height?: number }) {
+  const count = Math.floor(height / PAGE_LINE_HEIGHT_PX);
   
   return (
-    <div className="absolute left-1/2 top-14 w-12 -translate-x-1/2 z-[100] flex flex-col pointer-events-none select-none">
+    <div className="absolute left-1/2 top-0 w-12 -translate-x-1/2 z-[100] flex flex-col pointer-events-none select-none">
       {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="relative w-full flex items-center justify-center" style={{ height: `${LINE_HEIGHT}px` }}>
+        <div key={i} className="relative w-full flex items-center justify-center" style={{ height: `${PAGE_LINE_HEIGHT_PX}px` }}>
             <div className="h-4 w-16 bg-gradient-to-r from-neutral-400 via-neutral-100 to-neutral-400 rounded-full shadow-sm transform -rotate-2 border border-neutral-300" />
        </div>
       ))}
@@ -131,98 +128,107 @@ export function Notebook({
           )}
         </div>
         <div className="relative min-h-[720px] overflow-visible rounded-[28px] bg-neutral-100/50 shadow-inner px-4 py-14 border border-neutral-200/50">
-          <NotebookSpine />
+          <NotebookSpine />t-14 pb-14 border border-neutral-200/50 flex flex-col items-center">
+          <div className="relative w-full max-w-[1200px]" style={{ height: PAGE_CARD_HEIGHT_PX }}>
+            <NotebookSpine />
           
-          {pages.length === 0 ? (
-            <div
-              className="mx-auto flex items-center justify-center rounded-[6px] border-2 border-dashed border-neutral-300/50 bg-white/55 px-6 text-center"
-              style={{ width: `${PAGE_CARD_WIDTH_PX}px`, minHeight: `${PAGE_CARD_HEIGHT_PX}px` }}
-            >
-              <div>
-                <div className="list-text text-neutral-500">还没有移下来的 page</div>
-                <div className="ui-mono mt-2 opacity-45">在下方取消任意 item 后，这一页会自动回到上方。</div>
+            {pages.length === 0 ? (
+              <div
+                className="mx-auto flex items-center justify-center rounded-[6px] border-2 border-dashed border-neutral-300/50 bg-white/55 px-6 text-center"
+                style={{ width: `${PAGE_CARD_WIDTH_PX}px`, height: `${PAGE_CARD_HEIGHT_PX}px` }}
+              >
+                <div>
+                  <div className="list-text text-neutral-500">还没有移下来的 page</div>
+                  <div className="ui-mono mt-2 opacity-45">在下方取消任意 item 后，这一页会自动回到上方。</div>
+                </div>
               </div>
-            </div>
-          ) : (
-            <div className="relative min-h-[620px] perspective-[2000px]">
-              {pages.map((page, index) => {
-                const distanceFromFocus = index - safeFocusedPageIndex;
-                const isPast = distanceFromFocus < 0;
-                const isCurrent = distanceFromFocus === 0;
-                // With transformOrigin: 'left center', we don't need to manually translate x when flipping
-                const x = 0;
-                const y = 0;
-                const opacity = isCurrent ? 1 : 0.82;
-                
-                // For past pages (left stack), higher index = higher in stack (visible)
-                // For future pages (right stack), lower index = higher in stack (visible)
-                const zIndex = isCurrent
-                  ? pages.length + 5
-                  : isPast
-                    ? index
-                    : pages.length - index;
+            ) : (
+              <div className="relative w-full h-full perspective-[2000px]">
+                {pages.map((page, index) => {
+                  const distanceFromFocus = index - safeFocusedPageIndex;
+                  const isPast = distanceFromFocus < 0;
+                  const isCurrent = distanceFromFocus === 0;
+                  // With transformOrigin: 'left center', we don't need to manually translate x when flipping
+                  const x = 0;
+                  const y = 0;
+                  // Only dim future pages that are underneath the current stack
+                  const opacity = (isCurrent || isPast) ? 1 : 0.82;
+                  
+                  // For past pages (left stack), higher index = higher in stack (visible)
+                  // For future pages (right stack), lower index = higher in stack (visible)
+                  const zIndex = isCurrent
+                    ? pages.length + 5
+                    : isPast
+                      ? index
+                      : pages.length - index;
 
-                return (
-                  <motion.div
-                    key={page.key}
-                    className="absolute left-1/2 top-0 cursor-pointer border-none bg-transparent p-0 text-left"
-                    style={{
-                      width: `${PAGE_CARD_WIDTH_PX}px`,
-                      height: `${PAGE_CARD_HEIGHT_PX}px`,
-                      zIndex,
-                      transformStyle: 'preserve-3d',
-                      transformOrigin: 'left center',
-                    }}
-                    initial={false}
-                    animate={{
-                      x,
-                      y,
-                      rotateY: isPast ? -180 : 0,
-                      opacity,
-                    }}
-                    transition={{ type: 'spring', stiffness: 220, damping: 28 }}
-                    onClick={() => setFocusedPageKey(page.key)}
-                  >
-                    <div
-                      className="absolute inset-0 [backface-visibility:hidden]"
-                      style={{ pointerEvents: isCurrent ? 'auto' : 'none' }}
+                  return (
+                    <motion.div
+                      key={page.key}
+                      className="absolute left-1/2 top-0 cursor-pointer border-none bg-transparent p-0 text-left"
+                      style={{
+                        width: `${PAGE_CARD_WIDTH_PX}px`,
+                        height: `${PAGE_CARD_HEIGHT_PX}px`,
+                        zIndex,
+                        transformStyle: 'preserve-3d',
+                        transformOrigin: 'left center',
+                      }}
+                      initial={false}
+                      animate={{
+                        x,
+                        y,
+                        rotateY: isPast ? -180 : 0,
+                        opacity,
+                      }}
+                      transition={{ type: 'spring', stiffness: 220, damping: 28 }}
+                      onClick={() => setFocusedPageKey(page.key)}
                     >
-                      <NotebookHoles side="left" />
-                      <PageCard
-                        page={page}
-                        pageSize={PAGE_ITEM_CAPACITY}
-                        interactive={isCurrent}
-                        isActive={isCurrent}
-                        showAddItemInput={false}
-                        ticks={ticks}
-                        onRemoveItem={onRemoveItem}
-                        onToggleTick={onToggleTick}
-                      />
-                    </div>
-                    <div
-                      className="absolute inset-0 rounded-[6px] border border-[rgba(0,47,167,0.08)] bg-[linear-gradient(180deg,#f9fafc,#f1f2f5)] shadow-[0_26px_44px_rgba(0,47,167,0.08)] [backface-visibility:hidden]"
-                      style={{ transform: 'rotateY(180deg)' }}
-                    >
-                      <NotebookHoles side="right" />
-                      <div className="absolute inset-y-0 left-[50px] w-px bg-[rgba(0,47,167,0.05)]" />
-                      <div className="flex h-full flex-col justify-between px-12 py-10 text-neutral-400">
-                        <div>
-                          <div className="ui-label">Back</div>
-                          <div className="list-text mt-3 text-neutral-500">
-                            {page.groupTitle} · 第 {page.pageIndex + 1} 页
-                          </div>
-                        </div>
-                        <div className="ui-mono opacity-55">
-                          {page.items.length} / {PAGE_ITEM_CAPACITY}
-                        </div>
+                      <div
+                        className="absolute inset-0 [backface-visibility:hidden]"
+                        style={{ pointerEvents: isCurrent ? 'auto' : 'none' }}
+                      >
+                        <NotebookHoles side="left" />
+                        <PageCard
+                          page={page}
+                          pageSize={PAGE_ITEM_CAPACITY}
+                          interactive={isCurrent}
+                          isActive={isCurrent}
+                          showAddItemInput={false}
+                          ticks={ticks}
+                          variant="flat"
+                          onRemoveItem={onRemoveItem}
+                          onToggleTick={onToggleTick}
+                        />
                       </div>
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+                      <div
+                        className="absolute inset-0 [backface-visibility:hidden]"
+                        style={{ transform: 'rotateY(180deg)', pointerEvents: isCurrent ? 'auto' : 'none' }}
+                      >
+                        <NotebookHoles side="right" />
+                        <PageCard
+                          variant="flat"
+                          isBack
+                          className="bg-neutral-50/30"
+                        >
+                          <div className="flex h-full flex-col justify-between px-12 py-10 text-neutral-400 select-none">
+                            <div>
+                              <div className="ui-label">Back</div>
+                              <div className="list-text mt-3 text-neutral-500">
+                                {page.groupTitle} · 第 {page.pageIndex + 1} 页
+                              </div>
+                            </div>
+                            <div className="ui-mono opacity-55">
+                              {page.items.length} / {PAGE_ITEM_CAPACITY}
+                            </div>
+                          </div>
+                        </PageCard>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            )}
+          </div>v>
       </div>
     </div>
   );

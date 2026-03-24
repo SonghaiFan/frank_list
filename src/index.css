@@ -25,19 +25,17 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Hybrid Paper Component */
-.hybrid-paper {
+/* Hybrid Paper Component - Refactored for modularity */
+.paper-sheet {
   position: relative;
   width: 100%;
   background: #FFFFFF;
-  margin: 2rem auto;
-  border-radius: 4px;
-  box-shadow: 0 30px 60px rgba(0, 47, 167, 0.05);
-  border: 1px solid rgba(0, 47, 167, 0.1);
+  border-radius: 4px; /* Consistent rounded corners */
   overflow: hidden;
+  /* Base structural class - no layout margins or depth effects by default */
 }
 
-.hybrid-paper::before {
+.paper-sheet::before {
   content: '';
   position: absolute;
   left: 50px;
@@ -45,6 +43,41 @@ body {
   width: 1px;
   background: rgba(0, 47, 167, 0.15); /* Klein Blue margin line */
   z-index: 10;
+}
+
+.paper-sheet.spine-right::before {
+  left: auto;
+  right: 50px;
+}
+
+.paper-elevation {
+  box-shadow: 0 30px 60px rgba(0, 47, 167, 0.05);
+  border: 1px solid rgba(0, 47, 167, 0.1);
+}
+
+/* For backward compatibility if needed, or migration target */
+.hybrid-paper {
+  /* Legacy Composition */
+  @apply paper-sheet paper-elevation my-8 mx-auto;
+  /* Note: @apply depends on PostCSS config, but if using standard CSS, just replicate properties or assume classes are used in HTML */
+  /* Fallback if @apply fails in this env: */
+  position: relative;
+  width: 100%;
+  background: #FFFFFF;
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 2rem auto;
+  box-shadow: 0 30px 60px rgba(0, 47, 167, 0.05);
+  border: 1px solid rgba(0, 47, 167, 0.1);
+}
+.hybrid-paper::before {
+   content: '';
+   position: absolute;
+   left: 50px;
+   height: 100%;
+   width: 1px;
+   background: rgba(0, 47, 167, 0.15);
+   z-index: 10;
 }
 
 .paper-lines {
@@ -58,7 +91,11 @@ body {
   );
   background-attachment: local;
 }
+paper-sheet.spine-right .paper-content {
+  padding: 0px 70px 40px 30px;
+}
 
+.
 .paper-content {
   padding: 0px 30px 40px 70px;
 }
