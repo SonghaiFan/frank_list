@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
 import Matter from 'matter-js';
 
+const FLOOR_PERSPECTIVE_BOTTOM_SCALE = 2;
+
 export interface ConfettiPhysicsRef {
   spawn: (x: number, y: number) => void;
 }
@@ -22,13 +24,15 @@ const ConfettiPhysics = forwardRef<ConfettiPhysicsRef, ConfettiPhysicsProps>(({ 
     phase: number, 
     rotationSpeed: number,
     isSettled: boolean,
+    settledOrder: number | null,
     depthScale: number,
     targetY: number,
     id: number // Added for layering priority
   }>>([]);
   const idCounter = useRef(0);
+  const settledOrderCounter = useRef(0);
 
-  const colors = ['#FFFFFF', '#FDFDFD', '#F9F9F9'];
+  const colors = ['#FDFDFD', '#F9F9F9'];
 
   useImperativeHandle(ref, () => ({
     spawn: (clientX: number, clientY: number) => {
@@ -68,7 +72,7 @@ const ConfettiPhysics = forwardRef<ConfettiPhysicsRef, ConfettiPhysicsProps>(({ 
       if (notebookRef.current) {
         const rect = notebookRef.current.getBoundingClientRect();
         // rect.bottom is viewport-relative, so add scrollY to get document-relative
-        floorTop = rect.bottom + scrollY - 20; 
+        floorTop = rect.bottom + scrollY;
         floorBottom = rect.bottom + scrollY + 180;
       }
 
@@ -80,6 +84,7 @@ const ConfettiPhysics = forwardRef<ConfettiPhysicsRef, ConfettiPhysicsProps>(({ 
         phase: Math.random() * Math.PI * 2,
         rotationSpeed: 0.08 + Math.random() * 0.04, // Slightly faster frequency for tighter zig-zag
         isSettled: false,
+        settledOrder: null,
         depthScale: 1.0,
         targetY, // Store the landing depth (document-relative)
         id: idCounter.current++ // Unique ID for layering
@@ -148,14 +153,14 @@ const ConfettiPhysics = forwardRef<ConfettiPhysicsRef, ConfettiPhysicsProps>(({ 
 
       if (notebookRef.current) {
         const rect = notebookRef.current.getBoundingClientRect();
-        trapTopY = rect.bottom + scrollY - 20;
+        trapTopY = rect.bottom + scrollY;
         trapBottomY = rect.bottom + scrollY + 180;
         trapCenterX = rect.left + rect.width / 2;
         trapBaseWidth = rect.width;
       }
 
-      const trapWidthBottom = trapBaseWidth * 1.2;
-      const trapWidthTop = trapBaseWidth * 0.8;
+      const trapWidthBottom = trapBaseWidth * FLOOR_PERSPECTIVE_BOTTOM_SCALE;
+      const trapWidthTop = trapBaseWidth;
       
       // Draw Trapezoid (Subtle background)
       // We need to render it relative to the viewport
@@ -173,13 +178,18 @@ const ConfettiPhysics = forwardRef<ConfettiPhysicsRef, ConfettiPhysicsProps>(({ 
       ctx.setLineDash([]);
       ctx.restore();
 
-      // Sort particles by Y position for z-index effect (painter's algorithm)
-      // We add a small weight to the ID so that newer particles appear on top
-      // if they are at a similar depth.
+      // Airborne particles still use depth-by-Y, but settled particles use
+      // settle order so later landings always sit on top of earlier ones.
       const sortedParticles = [...particlesRef.current].sort((a, b) => {
-        const ay = a.body.position.y + (a.id * 0.5);
-        const by = b.body.position.y + (b.id * 0.5);
-        return ay - by;
+        if (a.isSettled && b.isSettled) {
+          return (a.settledOrder ?? 0) - (b.settledOrder ?? 0);
+        }
+
+        if (a.isSettled !== b.isSettled) {
+          return a.isSettled ? 1 : -1;
+        }
+
+        return a.body.position.y - b.body.position.y;
       });
 
       sortedParticles.forEach(p => {
@@ -194,6 +204,7 @@ const ConfettiPhysics = forwardRef<ConfettiPhysicsRef, ConfettiPhysicsProps>(({ 
         // Landing Logic: Check if it reached its target depth
         if (!p.isSettled && position.y >= particleData.targetY) {
           p.isSettled = true;
+          p.settledOrder = settledOrderCounter.current++;
           Matter.Body.setStatic(p.body, true);
           Matter.Body.setAngle(p.body, 0); // Force zero rotation on landing
           Matter.Body.setPosition(p.body, { x: position.x, y: particleData.targetY });
@@ -228,10 +239,13 @@ const ConfettiPhysics = forwardRef<ConfettiPhysicsRef, ConfettiPhysicsProps>(({ 
         const maxShadowDist = 200;
         const shadowAlpha = Math.max(0, 1 - (distanceToTarget / maxShadowDist)) * 0.1;
         const shadowScale = Math.max(0.2, 1 - (distanceToTarget / maxShadowDist)) * currentScale;
+        const shadowOffsetY = p.isSettled
+          ? 4 * currentScale
+          : Math.max(3, (1 - Math.min(1, distanceToTarget / maxShadowDist)) * 8) * currentScale;
         
         if (distanceToTarget < maxShadowDist) {
           ctx.save();
-          ctx.translate(renderX, renderTargetY);
+          ctx.translate(renderX, renderTargetY + shadowOffsetY);
           ctx.beginPath();
           ctx.ellipse(0, 0, 12 * shadowScale, 3 * shadowScale, 0, 0, Math.PI * 2);
           ctx.fillStyle = `rgba(0, 47, 167, ${shadowAlpha})`;
@@ -257,11 +271,23 @@ const ConfettiPhysics = forwardRef<ConfettiPhysicsRef, ConfettiPhysicsProps>(({ 
         ctx.fillStyle = p.color;
         ctx.globalAlpha = p.isSettled ? 1 : 0.8 + Math.abs(flipScale) * 0.2;
         ctx.fill();
-        
-        // Outline
-        ctx.strokeStyle = p.isSettled ? 'rgba(0, 47, 167, 0.2)' : 'rgba(200, 200, 200, 0.5)';
-        ctx.lineWidth = 1 / currentScale;
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = p.isSettled ? 'rgba(0, 47, 167, 0.22)' : 'rgba(0, 47, 167, 0.16)';
+        ctx.lineWidth = 0.6 / currentScale;
         ctx.stroke();
+
+        if (p.isSettled) {
+          const thicknessHeight = Math.max(1.2, 12 * perspectiveScaleY * 0.42);
+          ctx.save();
+          ctx.beginPath();
+          ctx.rect(-12, 0, 24, 12);
+          ctx.clip();
+          ctx.beginPath();
+          ctx.ellipse(0, thicknessHeight * 0.55, 12, thicknessHeight, 0, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
+          ctx.fill();
+          ctx.restore();
+        }
         
         ctx.restore();
       });
