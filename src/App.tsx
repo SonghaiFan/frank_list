@@ -8,7 +8,6 @@ import { ComparisonPanel } from './components/ComparisonPanel';
 import { GroupWorkspace } from './components/GroupWorkspace';
 import { Notebook } from './components/Notebook';
 import { ModalDialog } from './components/ModalDialog';
-import { NotebookGrid } from './components/NotebookGrid';
 import type { AppMode, Group, GroupPage, ItemOrigin, ItemOriginType, ListItem } from './lib/notebook-types';
 import { PAGE_ITEM_CAPACITY } from './lib/workspace-constants';
 
@@ -678,7 +677,6 @@ export default function App() {
   const [myId, setMyId] = useState<string>('local');
   const [groups, setGroups] = useState<Group[]>([createDefaultGroup()]);
   const [activeGroupId, setActiveGroupId] = useState<string>(DEFAULT_GROUP_ID);
-  const [viewMode, setViewMode] = useState<'grid' | 'detail'>('grid');
   const [myTicks, setMyTicks] = useState<Record<string, boolean>>({});
   const [boundPages, setBoundPages] = useState<Record<string, boolean>>({});
   const [extraPageCounts, setExtraPageCounts] = useState<Record<string, number>>({});
@@ -686,6 +684,7 @@ export default function App() {
   const [nextItemId, setNextItemId] = useState(0);
   const [sharedTicks, setSharedTicks] = useState<Record<string, boolean>>({});
   const [mode, setMode] = useState<AppMode>('edit');
+  const [isGalleryClosed, setIsGalleryClosed] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
   const [showQrCode, setShowQrCode] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
@@ -712,6 +711,10 @@ export default function App() {
   const lowerStackPages = useMemo(
     () => activeGroupPages.filter((page) => page.isBound),
     [activeGroupPages]
+  );
+  const notebookPages = useMemo(
+    () => (isGalleryClosed ? activeGroupPages : lowerStackPages),
+    [activeGroupPages, isGalleryClosed, lowerStackPages]
   );
 
   useEffect(() => {
@@ -837,20 +840,6 @@ export default function App() {
     setSharedTicks({});
     window.history.replaceState({}, '', window.location.pathname);
   };
-  
-  const openGroup = (group: Group) => {
-    setActiveGroupId(group.id);
-    setViewMode('detail');
-    setMode('edit');
-    setSharedTicks({});
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    window.history.replaceState({}, '', window.location.pathname);
-  };
-
-  const backToGrid = () => {
-    setViewMode('grid');
-    // window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
 
   const createGroup = () => {
     const newGroup: Group = {
@@ -860,7 +849,7 @@ export default function App() {
     };
     setNextGroupId((prev) => prev + 1);
     setGroups((prev) => [...prev, newGroup]);
-    openGroup(newGroup); // Switch to the new group
+    selectGroup(newGroup.id);
     setEditingGroupId(newGroup.id);
     setGroupTitleDraft(newGroup.title);
   };
@@ -1092,38 +1081,16 @@ export default function App() {
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="w-full max-w-[1240px]">
         <AppHeader
           copySuccess={copySuccess}
+          isGalleryClosed={isGalleryClosed}
           mode={mode}
           onBack={backToEdit}
           onCopy={copyToClipboard}
           onReset={() => setShowResetConfirm(true)}
           onShowQrCode={() => setShowQrCode(true)}
-          isDetailView={viewMode === 'detail'}
-          onBackToGrid={backToGrid}
+          onToggleGalleryClosed={() => setIsGalleryClosed((prev) => !prev)}
         />
 
         <AnimatePresence>
-        {viewMode === 'grid' ? (
-          <motion.div
-            key="grid"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-             exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
-          >
-              <div className="flex justify-end mb-4 px-8">
-                  <button 
-                    onClick={createGroup}
-                    className="px-6 py-2 bg-neutral-900 text-white rounded-full font-medium shadow-md hover:bg-black transition-all"
-                  >
-                      + New Notebook
-                  </button>
-              </div>
-              <NotebookGrid
-                groups={groups}
-                ticks={myTicks}
-                onSelectGroup={(group) => openGroup(group)}
-              />
-          </motion.div>
-        ) : (
           <motion.div
             key="detail"
             initial={{ opacity: 0 }}
@@ -1134,7 +1101,7 @@ export default function App() {
           <AnimatePresence mode="wait">
              {mode === 'compare-result' && comparison ? (
                  <ComparisonPanel comparison={comparison} group={activeGroup} />
-             ) : (
+             ) : !isGalleryClosed ? (
                  <GroupWorkspace
                      key={activeGroup.id}
                      activeGroup={activeGroup}
@@ -1159,19 +1126,27 @@ export default function App() {
                      onRenameStart={startRenameGroup}
                      onToggleTick={toggleTick}
                  />
+             ) : (
+                 <motion.div
+                   key={`closed-gallery-${activeGroup.id}`}
+                   initial={{ opacity: 0, y: 20 }}
+                   animate={{ opacity: 1, y: 0 }}
+                   exit={{ opacity: 0, y: 20 }}
+                   className="pb-2"
+                 />
              )}
           </AnimatePresence>
 
             <Notebook
               key={activeGroup.id}
-              pages={lowerStackPages}
+              closed={isGalleryClosed}
+              pages={notebookPages}
               ticks={myTicks}
               onRemoveItem={removeItem}
               onToggleTick={toggleTick}
             />
 
         </motion.div>
-        )}
         </AnimatePresence>
 
         <footer className="mt-10 flex flex-col items-center">

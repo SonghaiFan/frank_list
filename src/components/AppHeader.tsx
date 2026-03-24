@@ -1,26 +1,30 @@
 import React from 'react';
-import { ArrowLeft, Check, QrCode, RotateCcw, Share2, Menu } from 'lucide-react';
+import { ArrowLeft, Check, Menu, QrCode, RotateCcw, Share2 } from 'lucide-react';
 import type { AppMode } from '../lib/notebook-types';
 import { cn } from '../lib/cn';
 
 interface AppHeaderProps {
   copySuccess: boolean;
+  isGalleryClosed?: boolean;
   mode: AppMode;
   onBack: () => void;
   onCopy: () => void;
   onReset: () => void;
   onShowQrCode: () => void;
+  onToggleGalleryClosed?: () => void;
   isDetailView?: boolean;
   onBackToGrid?: () => void;
 }
 
 export function AppHeader({
   copySuccess,
+  isGalleryClosed = false,
   mode,
   onBack,
   onCopy,
   onReset,
   onShowQrCode,
+  onToggleGalleryClosed,
   isDetailView,
   onBackToGrid,
 }: AppHeaderProps) {
@@ -44,6 +48,17 @@ export function AppHeader({
       </div>
       
       <div className="flex gap-3">
+        <button
+          onClick={onToggleGalleryClosed}
+          className={cn(
+            circleButtonClass,
+            isGalleryClosed && 'border-transparent bg-klein text-white hover:bg-klein hover:text-white'
+          )}
+          title={isGalleryClosed ? 'Open stack view' : 'Close into notebook'}
+        >
+          <Menu size={18} />
+        </button>
+
         {mode !== 'edit' && (
           <button onClick={onBack} className={circleButtonClass} title="Back to Edit">
             <ArrowLeft size={18} />

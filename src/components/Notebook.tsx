@@ -8,6 +8,7 @@ import { CardCover } from './CardCover';
 import { CardEnd } from './CardEnd';
 
 interface NotebookProps {
+  closed?: boolean;
   pages: GroupPage[];
   ticks: Record<string, boolean>;
   onRemoveItem: (itemId: string) => void;
@@ -31,6 +32,7 @@ function NotebookSpine({ height = 600 }: { height?: number }) {
 }
 
 export function Notebook({
+  closed = false,
   pages,
   ticks,
   onRemoveItem,
@@ -62,7 +64,7 @@ export function Notebook({
     return [coverPage, ...pages, endPage];
   }, [pages]);
 
-  const [focusedPageKey, setFocusedPageKey] = useState<string | null>(allPages[allPages.length - 1]?.key ?? null);
+  const [focusedPageKey, setFocusedPageKey] = useState<string | null>(allPages[0]?.key ?? null);
   const previousKeysRef = useRef<string[]>(allPages.map((page) => page.key));
 
   useEffect(() => {
@@ -70,6 +72,10 @@ export function Notebook({
     const newlyAddedKey = nextKeys.find((key) => !previousKeysRef.current.includes(key));
 
     setFocusedPageKey((currentKey) => {
+      if (closed) {
+        return allPages[0]?.key ?? null;
+      }
+
       // If a new page is added (content page), focus it? 
       // Or if it's the "End" page appearing for the first time?
       if (newlyAddedKey && newlyAddedKey !== 'notebook-cover' && newlyAddedKey !== 'notebook-end') {
@@ -111,8 +117,8 @@ export function Notebook({
 
   const focusedPageIndex = allPages.findIndex((page) => page.key === focusedPageKey);
   const safeFocusedPageIndex = focusedPageIndex === -1 ? 0 : focusedPageIndex;
-  const canGoPrev = safeFocusedPageIndex > 0;
-  const canGoNext = safeFocusedPageIndex < allPages.length - 1;
+  const canGoPrev = !closed && safeFocusedPageIndex > 0;
+  const canGoNext = !closed && safeFocusedPageIndex < allPages.length - 1;
 
   const goPrevPage = () => {
     const prevPage = allPages[safeFocusedPageIndex - 1];
@@ -132,7 +138,7 @@ export function Notebook({
       exit={{ opacity: 0, scale: 0.9, y: -200 }}
       transition={{ type: 'spring', stiffness: 100, damping: 20 }}
     >
-        {allPages.length > 1 && (
+        {!closed && allPages.length > 1 && (
             <>
               <button
                 type="button"
@@ -162,15 +168,17 @@ export function Notebook({
                 const distanceFromFocus = index - safeFocusedPageIndex;
                 const isPast = distanceFromFocus < 0;
                 const isCurrent = distanceFromFocus === 0;
-                const x = 0;
-                const y = 0;
-                const opacity = isCurrent ? 1 : 0.82;
+                const x = closed ? Math.min(index * 2.5, 18) : 0;
+                const y = closed ? Math.min(index * 0.8, 8) : 0;
+                const opacity = closed ? Math.max(0.72, 1 - index * 0.03) : isCurrent ? 1 : 0.82;
                 
-                const zIndex = isCurrent
-                  ? allPages.length + 5
-                  : isPast
-                    ? index
-                    : allPages.length - index;
+                const zIndex = closed
+                  ? allPages.length - index
+                  : isCurrent
+                    ? allPages.length + 5
+                    : isPast
+                      ? index
+                      : allPages.length - index;
 
                 return (
                   <motion.div
@@ -188,11 +196,11 @@ export function Notebook({
                     animate={{
                       x,
                       y,
-                      rotateY: isPast ? -180 : 0,
+                      rotateY: closed ? 0 : isPast ? -180 : 0,
                       opacity,
                     }}
                     transition={{ type: 'spring', stiffness: 220, damping: 28 }}
-                    onClick={() => setFocusedPageKey(page.key)}
+                    onClick={closed ? undefined : () => setFocusedPageKey(page.key)}
                   >
                     <div
                       className="absolute inset-0 [backface-visibility:hidden]"
