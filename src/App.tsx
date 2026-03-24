@@ -45,6 +45,33 @@ const getColorFromId = (id: string) => {
   return colors[Math.abs(hash) % colors.length];
 };
 
+const getHashFromString = (value: string) => {
+  let hash = 0;
+  for (let i = 0; i < value.length; i++) {
+    hash = value.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return Math.abs(hash);
+};
+
+const getMarkerStyle = (text: string): React.CSSProperties => {
+  const hash = getHashFromString(text);
+  const tilt = ((hash % 7) - 3) * 0.35;
+  const topOffset = 52 + (hash % 5);
+  const height = 0.9 + ((hash >> 3) % 4) * 0.03;
+  const secondaryTilt = tilt * -0.6 + (((hash >> 5) % 5) - 2) * 0.12;
+  const secondaryTop = 57 + ((hash >> 2) % 4);
+  const secondaryHeight = 0.74 + ((hash >> 4) % 3) * 0.03;
+
+  return {
+    ['--marker-tilt' as string]: `${tilt}deg`,
+    ['--marker-top' as string]: `${topOffset}%`,
+    ['--marker-height' as string]: `${height}em`,
+    ['--marker-secondary-tilt' as string]: `${secondaryTilt}deg`,
+    ['--marker-secondary-top' as string]: `${secondaryTop}%`,
+    ['--marker-secondary-height' as string]: `${secondaryHeight}em`,
+  };
+};
+
 const DEFAULT_ITEMS_INDEX_MAP = Object.fromEntries(DEFAULT_ITEMS.map((item, idx) => [item, idx]));
 
 // Compact data structure for sharing
@@ -128,6 +155,10 @@ interface ListData {
   ownerId: string;
 }
 
+interface ConfettiHandle {
+  spawn: (x: number, y: number) => void;
+}
+
 export default function App() {
   const [myId, setMyId] = useState<string>('local');
   const [items, setItems] = useState<string[]>(DEFAULT_ITEMS);
@@ -138,6 +169,7 @@ export default function App() {
   const [copySuccess, setCopySuccess] = useState(false);
   const [showQrCode, setShowQrCode] = useState(false);
   const [newItemText, setNewItemText] = useState(''); 
+  const confettiRef = useRef<ConfettiHandle | null>(null);
   const paperRef = useRef<HTMLDivElement>(null);
 
   // Initialize from URL and LocalStorage
@@ -431,7 +463,7 @@ export default function App() {
                       {items.map((item) => (
                         <motion.li 
                           key={item}
-                          className="group relative"
+                          className="group relative flex items-center gap-2"
                         >
                           <input 
                             type="checkbox" 
@@ -439,15 +471,20 @@ export default function App() {
                             onChange={(e) => toggleTick(item, e)}
                             className="rams-checkbox absolute left-[-55px]"
                           />
-                          <div className="flex items-center gap-2">
-                            <span 
+                          <div
+                            className="flex flex-1 items-center gap-2 cursor-pointer"
+                            onClick={(e) => toggleTick(item, e)}
+                          >
+                            <span
                               className={cn(
-                                "flex-1 list-text on-lines cursor-pointer select-none",
-                                myTicks[item] && "opacity-20 line-through"
+                                "list-text on-lines select-none marker-text",
+                                myTicks[item] && "is-highlighted"
                               )}
-                              onClick={(e) => toggleTick(item, e)}
+                              style={getMarkerStyle(item)}
                             >
-                              {item}
+                              <span className="marker-stroke" aria-hidden="true" />
+                              <span className="marker-stroke marker-stroke-secondary" aria-hidden="true" />
+                              <span className="marker-label">{item}</span>
                             </span>
                             {itemOrigins[item] && itemOrigins[item] !== 'local' && (
                               <div 
@@ -459,7 +496,7 @@ export default function App() {
                           {mode === 'edit' && (
                             <button 
                               onClick={() => removeItem(item)}
-                              className="opacity-0 group-hover:opacity-100 p-1 text-neutral-300 hover:text-klein transition-all ml-auto"
+                              className="opacity-0 group-hover:opacity-100 p-1 text-neutral-300 hover:text-klein transition-all ml-auto relative z-10"
                             >
                               <X size={16} />
                             </button>
