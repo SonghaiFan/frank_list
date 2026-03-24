@@ -1107,30 +1107,35 @@ export default function App() {
                 {mode === 'compare-result' && comparison ? (
                   <ComparisonPanel comparison={comparison} group={activeGroup} />
                 ) : !isGalleryClosed ? (
-                  <GroupWorkspace
+                  <motion.div
                     key={activeGroup.id}
-                    activeGroup={activeGroup}
-                    activeGroupPages={stackPages}
-                    boundPageCount={lowerStackPages.length}
-                    editingGroupId={editingGroupId}
-                    groupTitleDraft={groupTitleDraft}
-                    mode={mode}
-                    newItemText={newItemText}
-                    pageSize={PAGE_SIZE}
-                    paperRef={paperRef}
-                    ticks={myTicks}
-                    onAddItem={addItem}
-                    onAppendPage={appendEmptyPage}
-                    onBindPage={movePageToLowerStack}
-                    onDeleteGroup={() => setShowDeleteGroupConfirm(true)}
-                    onDraftChange={setGroupTitleDraft}
-                    onItemTextChange={setNewItemText}
-                    onRemoveItem={removeItem}
-                    onRenameCancel={cancelRenameGroup}
-                    onRenameSave={saveGroupTitle}
-                    onRenameStart={startRenameGroup}
-                    onToggleTick={toggleTick}
-                  />
+                    layout
+                    transition={{ layout: { type: 'spring', stiffness: 210, damping: 28 } }}
+                  >
+                    <GroupWorkspace
+                      activeGroup={activeGroup}
+                      activeGroupPages={stackPages}
+                      boundPageCount={lowerStackPages.length}
+                      editingGroupId={editingGroupId}
+                      groupTitleDraft={groupTitleDraft}
+                      mode={mode}
+                      newItemText={newItemText}
+                      pageSize={PAGE_SIZE}
+                      paperRef={paperRef}
+                      ticks={myTicks}
+                      onAddItem={addItem}
+                      onAppendPage={appendEmptyPage}
+                      onBindPage={movePageToLowerStack}
+                      onDeleteGroup={() => setShowDeleteGroupConfirm(true)}
+                      onDraftChange={setGroupTitleDraft}
+                      onItemTextChange={setNewItemText}
+                      onRemoveItem={removeItem}
+                      onRenameCancel={cancelRenameGroup}
+                      onRenameSave={saveGroupTitle}
+                      onRenameStart={startRenameGroup}
+                      onToggleTick={toggleTick}
+                    />
+                  </motion.div>
                 ) : (
                   <motion.div
                     key={`closed-gallery-${activeGroup.id}`}
@@ -1146,11 +1151,11 @@ export default function App() {
             </motion.div>
 
             <motion.div
+              key={`notebook-${activeGroup.id}`}
               layout
               transition={{ layout: { type: 'spring', stiffness: 210, damping: 28 } }}
             >
               <Notebook
-                key={activeGroup.id}
                 closed={isGalleryClosed}
                 pages={notebookPages}
                 ticks={myTicks}
