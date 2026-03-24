@@ -170,7 +170,7 @@ export function CardStack({
             key={page.key}
             className={cn(
               'absolute inset-x-0 top-0 mx-auto cursor-pointer transition-all duration-300 ease-out',
-              'filter drop-shadow-[0_18px_30px_rgba(0,0,0,0.08)]',
+              // Removed drop-shadow to prevent shadow accumulation/darkening artifacts
               isActive && 'is-active cursor-default',
               isVisible ? getStackClasses(offset) : 'translate-x-0 translate-y-10 scale-[0.82] opacity-0 pointer-events-none'
             )}

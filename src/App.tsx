@@ -9,7 +9,7 @@ import { GroupWorkspace } from './components/GroupWorkspace';
 import { Notebook } from './components/Notebook';
 import { ModalDialog } from './components/ModalDialog';
 import type { AppMode, Group, GroupPage, ItemOrigin, ItemOriginType, ListItem } from './lib/notebook-types';
-import { PAGE_ITEM_CAPACITY } from './lib/workspace-constants';
+import { PAGE_CARD_HEIGHT_PX, PAGE_CARD_WIDTH_PX, PAGE_ITEM_CAPACITY } from './lib/workspace-constants';
 
 const DEFAULT_ITEMS = [
   "送礼物", "被送礼物", "暗恋", "明恋", "失恋", "表白", "被表白",
@@ -816,6 +816,26 @@ export default function App() {
     const isChecking = !myTicks[itemId];
     setMyTicks((prev) => ({ ...prev, [itemId]: isChecking }));
 
+    if (isChecking) {
+      const itemIndex = activeGroup.items.findIndex((item) => item.id === itemId);
+      if (itemIndex !== -1) {
+        const pageIndex = Math.floor(itemIndex / PAGE_SIZE);
+        const pageStart = pageIndex * PAGE_SIZE;
+        const pageItems = activeGroup.items.slice(pageStart, pageStart + PAGE_SIZE);
+        
+        const isPageComplete = pageItems.every((item) => 
+          item.id === itemId ? true : !!myTicks[item.id]
+        );
+
+        if (isPageComplete && pageItems.length > 0) {
+          const pageKey = getPageKey(activeGroup.id, pageIndex);
+          setTimeout(() => {
+            setBoundPages((prev) => ({ ...prev, [pageKey]: true }));
+          }, 800);
+        }
+      }
+    }
+
     if (isChecking && e && confettiRef.current && paperRef.current) {
       let x;
       let y;
@@ -1165,7 +1185,7 @@ export default function App() {
               ) : (
                 <motion.div
                   key="closed-gallery"
-                  className="grid grid-cols-2 gap-x-8 gap-y-12 w-full max-w-[1000px] mx-auto items-start justify-items-center pt-10 px-4"
+                  className="grid grid-cols-2 gap-x-20 gap-y-16 w-full max-w-[1200px] mx-auto items-start justify-items-center pt-10 px-4"
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
@@ -1182,11 +1202,17 @@ export default function App() {
                         key={group.id}
                         layoutId={`notebook-${group.id}`}
                         className="w-full flex justify-center"
+                        style={{
+                           width: PAGE_CARD_WIDTH_PX,
+                           height: PAGE_CARD_HEIGHT_PX,
+                           transformOrigin: 'top center',
+                        }}
                         transition={{ layout: { type: 'spring', stiffness: 210, damping: 28 } }}
                         title={group.title}
                       >
                         <Notebook
-                          className="min-h-[460px] scale-[0.85] origin-top mt-0"
+                          className="origin-top mt-0"
+                          style={{ transform: 'scale(0.85)' }}
                           closed={true}
                           coverTitle={group.title}
                           pages={groupPages}
@@ -1204,7 +1230,13 @@ export default function App() {
                   
                   <motion.div 
                      layout
-                     className="w-full aspect-[3/4] max-w-[360px] border-2 border-dashed border-neutral-200 rounded-[20px] flex flex-col items-center justify-center text-neutral-300 cursor-pointer hover:border-klein hover:text-klein hover:bg-klein/5 transition-all opacity-80 hover:opacity-100 scale-[0.85] origin-top min-h-[460px]"
+                     style={{
+                        width: PAGE_CARD_WIDTH_PX,
+                        height: PAGE_CARD_HEIGHT_PX,
+                        transform: 'scale(0.85)',
+                        transformOrigin: 'top center',
+                     }}
+                     className="border-2 border-dashed border-neutral-200 rounded-[20px] flex flex-col items-center justify-center text-neutral-300 cursor-pointer hover:border-klein hover:text-klein hover:bg-klein/5 mixed-blend-multiply opacity-80 hover:opacity-100 transition-all origin-top"
                      onClick={() => {
                        const newGroupId = randomId(6);
                        const newGroup: Group = {
@@ -1213,9 +1245,6 @@ export default function App() {
                          items: []
                        };
                        setGroups(prev => [...prev, newGroup]);
-                       setActiveGroupId(newGroup.id);
-                       // Don't open immediately? Or do?
-                       // Let's stay in gallery view so they can see it added.
                      }}
                   >
                      <span className="text-5xl font-light mb-4">+</span>

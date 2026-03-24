@@ -55,37 +55,29 @@ export function PageCard({
     >
       <div className="paper-lines">
         <div className="paper-content flex h-full flex-col">
-          <div className="mx-auto mb-[0.55rem] flex min-h-[calc(var(--paper-line-height)*1.5)] max-w-[550px] items-start justify-between gap-4 border-b border-[rgba(0,47,167,0.08)] px-[0.4rem] pb-[0.65rem] pt-[0.85rem] max-md:flex-col max-md:items-start max-md:pr-0">
-            <motion.div layout>
-              <div className="ui-label">Page {page.pageIndex + 1}</div>
-              <div className="list-text text-[0.98rem]">
-                {page.groupTitle} · 第 {page.pageIndex + 1} 页
+          <div className="mx-auto mb-[1rem] flex w-full max-w-[550px] items-end justify-between gap-4 border-b border-[rgba(0,47,167,0.08)] px-[0.8rem] pb-[0.5rem] pt-[1.5rem] max-md:flex-col max-md:items-start max-md:pr-0">
+            <motion.div layout className="flex-1">
+              <div className="list-text text-xl font-medium tracking-tight text-neutral-800">
+                {page.groupTitle}
               </div>
             </motion.div>
-            <div className="flex items-center gap-2">
-              <motion.span className="ui-mono opacity-45" layout>
-                [{page.items.length}/{pageSize}]
+            <div className="flex items-center gap-3 mb-1">
+              <motion.span className="ui-mono text-[10px] text-neutral-300 tracking-wider" layout>
+                {page.items.length}/{pageSize}
               </motion.span>
-              {page.isBound ? (
-                <motion.span className="rounded-full bg-klein px-3 py-1 text-[11px] font-semibold text-white" layout>
-                  已移下方
+               {page.isBound ? (
+                <motion.span className="text-klein font-medium text-sm tracking-wide border-b-2 border-klein/10 pb-0.5 opacity-60" layout>
+                  已归档
                 </motion.span>
-              ) : page.isComplete && interactive ? (
-                <motion.button
-                  type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    onBindPage?.(page.key);
-                  }}
-                  whileHover={{ y: -1, scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="rounded-full border border-klein/20 bg-klein/6 px-3 py-1 text-[11px] font-semibold text-klein transition-colors hover:bg-klein hover:text-white"
+              ) : page.isComplete ? (
+                <motion.span
+                  className="text-klein font-medium text-sm tracking-wide border-b-2 border-klein/20 pb-0.5"
                   layout
                 >
-                  移到下方
-                </motion.button>
+                  已完成
+                </motion.span>
               ) : (
-                <span className="rounded-full border border-dashed border-neutral-300 px-3 py-1 text-[11px] font-semibold text-neutral-400">
+                <span className="text-neutral-300 font-medium text-sm tracking-wide border-b-2 border-transparent pb-0.5">
                   待完成
                 </span>
               )}

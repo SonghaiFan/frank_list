@@ -213,9 +213,9 @@ export function Notebook({
                 const distanceFromFocus = index - safeFocusedPageIndex;
                 const isPast = distanceFromFocus < 0;
                 const isCurrent = distanceFromFocus === 0;
-                const x = closed ? Math.min(index * 2.5, 18) : 0;
+                const x = closed ? Math.min(index * 3, 24) : 0;
                 const y = closed ? Math.min(index * 0.8, 8) : 0;
-                const opacity = closed ? Math.max(0.72, 1 - index * 0.03) : isCurrent ? 1 : 0.82;
+                const opacity = closed ? 1 : isCurrent ? 1 : 0.82;
                 const rotateY = closed ? 0 : isPast ? -180 : 0;
                 const collectionIndex = collectionState.incomingKeys.indexOf(page.key);
                 const isIncoming = collectionIndex !== -1;
@@ -289,15 +289,20 @@ export function Notebook({
                           isActive={isCurrent} 
                           title={coverTitle} 
                           layoutId={`cover-${pages[0]?.groupId || 'default'}`}
+                          className={closed && index !== allPages.length - 1 ? "!shadow-none" : ""}
                         />
                       ) : page.type === 'end' ? (
-                        <CardEnd isActive={isCurrent} />
+                        <CardEnd 
+                          isActive={isCurrent}
+                          className={closed && index !== allPages.length - 1 ? "!shadow-none" : ""}
+                        />
                       ) : (
                         <PageCard
                           page={page}
                           pageSize={PAGE_ITEM_CAPACITY}
                           interactive={isCurrent}
                           isActive={isCurrent}
+                          className={closed && index !== allPages.length - 1 ? "!shadow-none" : ""}
                           showAddItemInput={false}
                           ticks={ticks}
                           onRemoveItem={onRemoveItem}
