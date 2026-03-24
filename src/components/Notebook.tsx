@@ -217,6 +217,15 @@ export function Notebook({
                 const y = closed ? Math.min(index * 0.8, 8) : 0;
                 const opacity = closed ? 1 : isCurrent ? 1 : 0.82;
                 const rotateY = closed ? 0 : isPast ? -180 : 0;
+                
+                // Shadow logic to prevent accumulation
+                // 1. If closed or future (right stack): Only the bottom-most card (last index) has shadow
+                // 2. If past (left stack): Only the bottom-most card (index 0) has shadow
+                const showShadow = (closed || !isPast) 
+                  ? index === allPages.length - 1
+                  : index === 0;
+                const shadowClass = showShadow ? "" : "!shadow-none";
+
                 const collectionIndex = collectionState.incomingKeys.indexOf(page.key);
                 const isIncoming = collectionIndex !== -1;
                 const coverMidRotateY = rotateY === 0 ? -105 : -75;
@@ -289,12 +298,12 @@ export function Notebook({
                           isActive={isCurrent} 
                           title={coverTitle} 
                           layoutId={`cover-${pages[0]?.groupId || 'default'}`}
-                          className={closed && index !== allPages.length - 1 ? "!shadow-none" : ""}
+                          className={shadowClass}
                         />
                       ) : page.type === 'end' ? (
                         <CardEnd 
                           isActive={isCurrent}
-                          className={closed && index !== allPages.length - 1 ? "!shadow-none" : ""}
+                          className={shadowClass}
                         />
                       ) : (
                         <PageCard
@@ -302,7 +311,7 @@ export function Notebook({
                           pageSize={PAGE_ITEM_CAPACITY}
                           interactive={isCurrent}
                           isActive={isCurrent}
-                          className={closed && index !== allPages.length - 1 ? "!shadow-none" : ""}
+                          className={shadowClass}
                           showAddItemInput={false}
                           ticks={ticks}
                           onRemoveItem={onRemoveItem}

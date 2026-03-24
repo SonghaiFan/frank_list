@@ -54,38 +54,37 @@ export function PageCard({
       transition={{ type: 'spring', stiffness: 260, damping: 30 }}
     >
       <div className="paper-lines">
-        <div className="paper-content flex h-full flex-col">
-          <div className="mx-auto mb-[1rem] flex w-full max-w-[550px] items-end justify-between gap-4 border-b border-[rgba(0,47,167,0.08)] px-[0.8rem] pb-[0.5rem] pt-[1.5rem] max-md:flex-col max-md:items-start max-md:pr-0">
+        <div className="paper-content flex h-full flex-col !p-0">
+          {/* Header: Exact 2 lines height (72px). Padding aligns text baseline to the 2nd line. */}
+          <div className="mx-auto flex h-[72px] w-full max-w-[550px] items-end justify-between gap-4 border-b border-[rgba(0,47,167,0.1)] pl-[70px] pr-8 pb-[6px]">
             <motion.div layout className="flex-1">
-              <div className="list-text text-xl font-medium tracking-tight text-neutral-800">
+              <div className="list-text text-xl font-medium tracking-tight text-neutral-800 leading-none">
                 {page.groupTitle}
               </div>
             </motion.div>
-            <div className="flex items-center gap-3 mb-1">
-              <motion.span className="ui-mono text-[10px] text-neutral-300 tracking-wider" layout>
-                {page.items.length}/{pageSize}
-              </motion.span>
+            <div className="flex items-center gap-3 mb-[1px]">
                {page.isBound ? (
-                <motion.span className="text-klein font-medium text-sm tracking-wide border-b-2 border-klein/10 pb-0.5 opacity-60" layout>
+                <motion.span className="text-klein font-medium text-xs tracking-wide opacity-60" layout>
                   已归档
                 </motion.span>
               ) : page.isComplete ? (
                 <motion.span
-                  className="text-klein font-medium text-sm tracking-wide border-b-2 border-klein/20 pb-0.5"
+                  className="text-klein font-medium text-xs tracking-wide"
                   layout
                 >
                   已完成
                 </motion.span>
               ) : (
-                <span className="text-neutral-300 font-medium text-sm tracking-wide border-b-2 border-transparent pb-0.5">
+                <span className="text-neutral-300 font-medium text-xs tracking-wide">
                   待完成
                 </span>
               )}
             </div>
           </div>
 
+          <div className="flex-1 pl-18 pt-0">
           {page.items.length === 0 ? (
-            <div className="py-8 text-neutral-300 list-text on-lines">
+            <div className="text-neutral-300 list-text on-lines pt-2.5">
               {`这一页还没有内容，继续往这一组里加 item，它会先排在这里；超过 ${pageSize} 个后会自动生成下一页。`}
             </div>
           ) : (
@@ -106,7 +105,7 @@ export function PageCard({
                     disabled={!interactive}
                     onChange={(e) => onToggleTick?.(item.id, e)}
                     className={cn(
-                      'rams-checkbox absolute left-[-55px]',
+                      'rams-checkbox absolute left-[-60px]',
                       !interactive && 'cursor-default pointer-events-none'
                     )}
                   />
@@ -158,10 +157,11 @@ export function PageCard({
               />
             </div>
           )}
+          </div>
           
           <div className="mt-auto px-8 pb-6 flex justify-end opacity-40">
             <span className="ui-mono text-[10px] tracking-[0.2em] text-neutral-400 font-medium">
-              PAGE {String(page.pageIndex + 1).padStart(2, '0')}
+              {String(page.pageIndex + 1).padStart(2, '0')}
             </span>
           </div>
         </div>
