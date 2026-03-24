@@ -1,7 +1,6 @@
 import { motion } from 'motion/react';
 import type { Group, ListItem } from '../lib/notebook-types';
 import { cn } from '../lib/cn';
-import { MOTION_FADE } from '../lib/motion';
 
 interface ComparisonPanelProps {
   comparison: {
@@ -17,10 +16,9 @@ export function ComparisonPanel({ comparison, group }: ComparisonPanelProps) {
   return (
     <motion.div
       key={`result-${group.id}`}
-      initial={false}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0 }}
-      transition={MOTION_FADE}
       className="hybrid-paper"
     >
       <div className="paper-lines">

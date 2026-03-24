@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { motion } from 'motion/react';
-import { MOTION_LAYOUT_SPRING, MOTION_PANEL_SPRING } from '../lib/motion';
 import type { GroupPage } from '../lib/notebook-types';
 import { PAGE_CARD_HEIGHT_PX, PAGE_CARD_WIDTH_PX, PAGE_ITEM_CAPACITY } from '../lib/workspace-constants';
 import { PageCard } from './PageCard';
@@ -133,12 +132,11 @@ export function Notebook({
 
   return (
     <motion.div 
-      layout
       className="relative flex min-h-[700px] w-full items-start justify-center perspective-[2000px] mt-10"
-      initial={false}
+      initial={{ opacity: 0, scale: 0.9, y: -200 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.98, y: -18 }}
-      transition={MOTION_PANEL_SPRING}
+      exit={{ opacity: 0, scale: 0.9, y: -200 }}
+      transition={{ type: 'spring', stiffness: 100, damping: 20 }}
     >
         {!closed && allPages.length > 1 && (
             <>
@@ -201,7 +199,7 @@ export function Notebook({
                       rotateY: closed ? 0 : isPast ? -180 : 0,
                       opacity,
                     }}
-                    transition={MOTION_LAYOUT_SPRING}
+                    transition={{ type: 'spring', stiffness: 220, damping: 28 }}
                     onClick={closed ? undefined : () => setFocusedPageKey(page.key)}
                   >
                     <div

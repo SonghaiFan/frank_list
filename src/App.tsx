@@ -1,15 +1,13 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { motion, AnimatePresence, MotionConfig, LayoutGroup } from 'motion/react';
+import { motion, AnimatePresence, LayoutGroup } from 'motion/react';
 import { Users } from 'lucide-react';
 import LZString from 'lz-string';
 import { QRCodeCanvas } from 'qrcode.react';
 import { AppHeader } from './components/AppHeader';
 import { ComparisonPanel } from './components/ComparisonPanel';
-import { NotebookGallery } from './components/NotebookGallery';
 import { GroupWorkspace } from './components/GroupWorkspace';
 import { Notebook } from './components/Notebook';
 import { ModalDialog } from './components/ModalDialog';
-import { MOTION_FADE, MOTION_LAYOUT_SPRING, MOTION_MODAL } from './lib/motion';
 import type { AppMode, Group, GroupPage, ItemOrigin, ItemOriginType, ListItem } from './lib/notebook-types';
 import { PAGE_ITEM_CAPACITY } from './lib/workspace-constants';
 
@@ -714,6 +712,10 @@ export default function App() {
     () => activeGroupPages.filter((page) => page.isBound),
     [activeGroupPages]
   );
+  const notebookPages = useMemo(
+    () => (isGalleryClosed ? activeGroupPages : lowerStackPages),
+    [activeGroupPages, isGalleryClosed, lowerStackPages]
+  );
 
   useEffect(() => {
     const initialize = async () => {
@@ -834,7 +836,6 @@ export default function App() {
 
   const selectGroup = (groupId: string) => {
     setActiveGroupId(groupId);
-    setIsGalleryClosed(false);
     setMode('edit');
     setSharedTicks({});
     window.history.replaceState({}, '', window.location.pathname);
@@ -1076,9 +1077,8 @@ export default function App() {
   }, [activeGroup.items, mode, myTicks, sharedTicks]);
 
   return (
-    <MotionConfig reducedMotion="user">
     <div className="min-h-screen p-4 md:p-10 flex flex-col items-center">
-      <motion.div initial={false} animate={{ opacity: 1 }} transition={MOTION_FADE} className="w-full max-w-[1240px]">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="w-full max-w-[1240px]">
         <AppHeader
           copySuccess={copySuccess}
           isGalleryClosed={isGalleryClosed}
@@ -1090,85 +1090,61 @@ export default function App() {
           onToggleGalleryClosed={() => setIsGalleryClosed((prev) => !prev)}
         />
 
-        <AnimatePresence initial={false}>
+        <AnimatePresence>
           <motion.div
             key="detail"
-            initial={false}
+            initial={{ opacity: 0 }}
              animate={{ opacity: 1 }}
              exit={{ opacity: 0 }}
-             transition={MOTION_FADE}
           >
-            <LayoutGroup>
-              <motion.div layout className="flex flex-col">
-                <AnimatePresence initial={false} mode="sync">
-                  {mode === 'compare-result' && comparison ? (
-                    <motion.div
-                      key={`comparison-${activeGroup.id}`}
-                      layout
-                      transition={MOTION_LAYOUT_SPRING}
-                    >
-                      <ComparisonPanel comparison={comparison} group={activeGroup} />
-                    </motion.div>
-                  ) : isGalleryClosed ? (
-                    <motion.div
-                      key="gallery"
-                      layout
-                      transition={MOTION_LAYOUT_SPRING}
-                    >
-                      <NotebookGallery
-                        activeGroupId={activeGroup.id}
-                        groups={groups}
-                        ticks={myTicks}
-                        onCreateGroup={createGroup}
-                        onOpenGroup={selectGroup}
-                      />
-                    </motion.div>
-                  ) : !isGalleryClosed ? (
-                    <motion.div
-                      key={`workspace-${activeGroup.id}`}
-                      layout
-                      transition={MOTION_LAYOUT_SPRING}
-                    >
-                      <GroupWorkspace
-                        activeGroup={activeGroup}
-                        activeGroupPages={stackPages}
-                        boundPageCount={lowerStackPages.length}
-                        editingGroupId={editingGroupId}
-                        groupTitleDraft={groupTitleDraft}
-                        mode={mode}
-                        newItemText={newItemText}
-                        pageSize={PAGE_SIZE}
-                        paperRef={paperRef}
-                        ticks={myTicks}
-                        onAddItem={addItem}
-                        onAppendPage={appendEmptyPage}
-                        onBindPage={movePageToLowerStack}
-                        onDeleteGroup={() => setShowDeleteGroupConfirm(true)}
-                        onDraftChange={setGroupTitleDraft}
-                        onItemTextChange={setNewItemText}
-                        onRemoveItem={removeItem}
-                        onRenameCancel={cancelRenameGroup}
-                        onRenameSave={saveGroupTitle}
-                        onRenameStart={startRenameGroup}
-                        onToggleTick={toggleTick}
-                      />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+        
+          <AnimatePresence mode="wait">
+             {mode === 'compare-result' && comparison ? (
+                 <ComparisonPanel comparison={comparison} group={activeGroup} />
+             ) : !isGalleryClosed ? (
+                 <GroupWorkspace
+                     key={activeGroup.id}
+                     activeGroup={activeGroup}
+                     activeGroupPages={stackPages}
+                     boundPageCount={lowerStackPages.length}
+                     editingGroupId={editingGroupId}
+                     groupTitleDraft={groupTitleDraft}
+                     mode={mode}
+                     newItemText={newItemText}
+                     pageSize={PAGE_SIZE}
+                     paperRef={paperRef}
+                     ticks={myTicks}
+                     onAddItem={addItem}
+                     onAppendPage={appendEmptyPage}
+                     onBindPage={movePageToLowerStack}
+                     onDeleteGroup={() => setShowDeleteGroupConfirm(true)}
+                     onDraftChange={setGroupTitleDraft}
+                     onItemTextChange={setNewItemText}
+                     onRemoveItem={removeItem}
+                     onRenameCancel={cancelRenameGroup}
+                     onRenameSave={saveGroupTitle}
+                     onRenameStart={startRenameGroup}
+                     onToggleTick={toggleTick}
+                 />
+             ) : (
+                 <motion.div
+                   key={`closed-gallery-${activeGroup.id}`}
+                   initial={{ opacity: 0, y: 20 }}
+                   animate={{ opacity: 1, y: 0 }}
+                   exit={{ opacity: 0, y: 20 }}
+                   className="pb-2"
+                 />
+             )}
+          </AnimatePresence>
 
-                {!isGalleryClosed && (
-                  <motion.div layout transition={MOTION_LAYOUT_SPRING}>
-                    <Notebook
-                      key={activeGroup.id}
-                      pages={lowerStackPages}
-                      ticks={myTicks}
-                      onRemoveItem={removeItem}
-                      onToggleTick={toggleTick}
-                    />
-                  </motion.div>
-                )}
-              </motion.div>
-            </LayoutGroup>
+            <Notebook
+              key={activeGroup.id}
+              closed={isGalleryClosed}
+              pages={notebookPages}
+              ticks={myTicks}
+              onRemoveItem={removeItem}
+              onToggleTick={toggleTick}
+            />
 
         </motion.div>
         </AnimatePresence>
@@ -1249,18 +1225,16 @@ export default function App() {
 
           {showQrCode && (
             <motion.div
-              initial={false}
+              initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={MOTION_FADE}
               className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-neutral-900/40 backdrop-blur-sm"
               onClick={() => setShowQrCode(false)}
             >
               <motion.div
-                initial={{ scale: 0.97, opacity: 0 }}
+                initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.97, opacity: 0 }}
-                transition={MOTION_MODAL}
+                exit={{ scale: 0.9, opacity: 0 }}
                 className="bg-white p-8 rounded-3xl shadow-2xl max-w-xs w-full flex flex-col items-center gap-6"
                 onClick={(e) => e.stopPropagation()}
               >
@@ -1289,6 +1263,5 @@ export default function App() {
         </AnimatePresence>
       </motion.div>
     </div>
-    </MotionConfig>
   );
 }
