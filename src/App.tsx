@@ -1,14 +1,16 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { Share2, Check, Plus, ArrowLeft, Users, X, QrCode, RotateCcw, Trash2 } from 'lucide-react';
+import { motion, AnimatePresence, LayoutGroup } from 'motion/react';
+import { Users } from 'lucide-react';
 import LZString from 'lz-string';
 import { QRCodeCanvas } from 'qrcode.react';
-import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-
-function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
+import { AppHeader } from './components/AppHeader';
+import { ComparisonPanel } from './components/ComparisonPanel';
+import { GroupTabs } from './components/GroupTabs';
+import { GroupWorkspace } from './components/GroupWorkspace';
+import { LowerStackPanel } from './components/LowerStackPanel';
+import { ModalDialog } from './components/ModalDialog';
+import type { AppMode, Group, GroupPage, ItemOrigin, ItemOriginType, ListItem } from './lib/notebook-types';
+import { PAGE_ITEM_CAPACITY } from './lib/workspace-constants';
 
 const DEFAULT_ITEMS = [
   "送礼物", "被送礼物", "暗恋", "明恋", "失恋", "表白", "被表白",
@@ -30,6 +32,7 @@ const DEFAULT_ITEMS = [
 
 const DEFAULT_GROUP_ID = '0';
 const DEFAULT_GROUP_TITLE = '人生清单100项';
+const PAGE_SIZE = PAGE_ITEM_CAPACITY;
 const LOCAL_STATE_STORAGE_KEY = 'rams-life-state';
 const ID_ALPHABET = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 const BIT_ALPHABET = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_';
@@ -40,29 +43,11 @@ const ITEM_SEP = '\u0004';
 const ITEM_FIELD_SEP = '\u0005';
 const ESCAPE_CHAR = '\\';
 
-type ItemOriginType = 'default' | 'self' | 'external';
-
-interface ItemOrigin {
-  type: ItemOriginType;
-  ownerId?: string;
-}
-
-interface ListItem {
-  id: string;
-  text: string;
-  origin: ItemOrigin;
-}
-
-interface Group {
-  id: string;
-  title: string;
-  items: ListItem[];
-}
-
 interface PersistedAppState {
   v: number;
   groups: Group[];
   ticks: Record<string, boolean>;
+  boundPages: Record<string, boolean>;
   activeGroupId: string;
   nextGroupId: number;
   nextItemId: number;
@@ -81,6 +66,7 @@ interface CompactLocalState {
   v: number;
   a: string;
   c: [string, string];
+  b: string[];
   g: CompactLocalGroup[];
 }
 
@@ -101,33 +87,6 @@ interface ImportedGroupPayload {
 interface ConfettiHandle {
   spawn: (x: number, y: number) => void;
 }
-
-const getHashFromString = (value: string) => {
-  let hash = 0;
-  for (let i = 0; i < value.length; i++) {
-    hash = value.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return Math.abs(hash);
-};
-
-const getMarkerStyle = (text: string): React.CSSProperties => {
-  const hash = getHashFromString(text);
-  const tilt = ((hash % 7) - 3) * 0.35;
-  const topOffset = 52 + (hash % 5);
-  const height = 0.9 + ((hash >> 3) % 4) * 0.03;
-  const secondaryTilt = tilt * -0.6 + (((hash >> 5) % 5) - 2) * 0.12;
-  const secondaryTop = 57 + ((hash >> 2) % 4);
-  const secondaryHeight = 0.74 + ((hash >> 4) % 3) * 0.03;
-
-  return {
-    ['--marker-tilt' as string]: `${tilt}deg`,
-    ['--marker-top' as string]: `${topOffset}%`,
-    ['--marker-height' as string]: `${height}em`,
-    ['--marker-secondary-tilt' as string]: `${secondaryTilt}deg`,
-    ['--marker-secondary-top' as string]: `${secondaryTop}%`,
-    ['--marker-secondary-height' as string]: `${secondaryHeight}em`,
-  };
-};
 
 const createDefaultItem = (text: string, index: number): ListItem => ({
   id: `_${index.toString(36)}`,
@@ -220,9 +179,10 @@ const createDefaultGroup = (): Group => ({
 });
 
 const createDefaultState = (): PersistedAppState => ({
-  v: 4,
+  v: 5,
   groups: [createDefaultGroup()],
   ticks: {},
+  boundPages: {},
   activeGroupId: DEFAULT_GROUP_ID,
   nextGroupId: 1,
   nextItemId: 0,
@@ -287,9 +247,10 @@ const normalizeState = (state?: Partial<PersistedAppState>): PersistedAppState =
     : groups[0].id;
 
   return {
-    v: 4,
+    v: 5,
     groups,
     ticks: state?.ticks ?? {},
+    boundPages: state?.boundPages ?? {},
     activeGroupId,
     nextGroupId: state?.nextGroupId ?? 1,
     nextItemId: state?.nextItemId ?? 0,
@@ -313,6 +274,32 @@ const getEncryptionKey = async (userId: string) => {
   const keyMaterial = new TextEncoder().encode(`rams-life-state:${userId}:v3`);
   const digest = await crypto.subtle.digest('SHA-256', keyMaterial);
   return crypto.subtle.importKey('raw', digest, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
+};
+
+const getPageKey = (groupId: string, pageIndex: number) => `${groupId}:${pageIndex}`;
+
+const getGroupPages = (
+  group: Group,
+  ticks: Record<string, boolean>,
+  boundPages: Record<string, boolean>
+): GroupPage[] => {
+  const pageCount = Math.max(1, Math.ceil(group.items.length / PAGE_SIZE));
+
+  return Array.from({ length: pageCount }, (_, pageIndex) => {
+    const items = group.items.slice(pageIndex * PAGE_SIZE, (pageIndex + 1) * PAGE_SIZE);
+    const key = getPageKey(group.id, pageIndex);
+    const isComplete = items.length > 0 && items.every((item) => !!ticks[item.id]);
+
+    return {
+      key,
+      groupId: group.id,
+      groupTitle: group.title,
+      pageIndex,
+      items,
+      isComplete,
+      isBound: isComplete && !!boundPages[key],
+    };
+  });
 };
 
 const compressLocalGroup = (group: Group, ticks: Record<string, boolean>): CompactLocalGroup => {
@@ -378,9 +365,10 @@ const decompressLocalGroup = (group: CompactLocalGroup) => {
 };
 
 const toCompactLocalState = (state: PersistedAppState): CompactLocalState => ({
-  v: 4,
+  v: 5,
   a: state.activeGroupId,
   c: [state.nextGroupId.toString(36), state.nextItemId.toString(36)],
+  b: Object.keys(state.boundPages).filter((key) => state.boundPages[key]),
   g: state.groups.map((group) => compressLocalGroup(group, state.ticks)),
 });
 
@@ -410,12 +398,16 @@ const serializeCompactLocalState = (state: CompactLocalState) => {
     ].join(GROUP_FIELD_SEP);
   }).join(GROUP_SEP);
 
-  return ['L4', state.a, state.c[0], state.c[1], groups].join(TOP_SEP);
+  return ['L5', state.a, state.c[0], state.c[1], state.b.map(escapeCompact).join(GROUP_SEP), groups].join(TOP_SEP);
 };
 
 const parseCompactLocalState = (raw: string): CompactLocalState | null => {
-  const [version, activeGroupId, nextGroupId, nextItemId, groupsRaw = ''] = splitEscaped(raw, TOP_SEP);
-  if (version !== 'L4') return null;
+  const parts = splitEscaped(raw, TOP_SEP);
+  const [version, activeGroupId, nextGroupId, nextItemId] = parts;
+  if (version !== 'L4' && version !== 'L5') return null;
+
+  const boundRaw = version === 'L5' ? (parts[4] ?? '') : '';
+  const groupsRaw = version === 'L5' ? (parts[5] ?? '') : (parts[4] ?? '');
 
   const groups = groupsRaw
     ? splitEscaped(groupsRaw, GROUP_SEP).filter(Boolean).map((groupRaw) => {
@@ -430,9 +422,10 @@ const parseCompactLocalState = (raw: string): CompactLocalState | null => {
     : [];
 
   return {
-    v: 4,
+    v: version === 'L5' ? 5 : 4,
     a: activeGroupId,
     c: [nextGroupId ?? '1', nextItemId ?? '0'],
+    b: boundRaw ? splitEscaped(boundRaw, GROUP_SEP).filter(Boolean) : [],
     g: groups,
   };
 };
@@ -445,9 +438,10 @@ const fromCompactLocalState = (state: CompactLocalState): PersistedAppState => {
   }, {});
 
   return normalizeState({
-    v: 4,
+    v: 5,
     groups,
     ticks,
+    boundPages: Object.fromEntries(state.b.map((key) => [key, true])),
     activeGroupId: state.a,
     nextGroupId: parseInt(state.c?.[0] ?? '1', 36),
     nextItemId: parseInt(state.c?.[1] ?? '0', 36),
@@ -455,11 +449,11 @@ const fromCompactLocalState = (state: CompactLocalState): PersistedAppState => {
 };
 
 const serializeEncryptedPayload = (iv: Uint8Array, data: Uint8Array) =>
-  ['E4', encodeBase64(iv), encodeBase64(data)].join(TOP_SEP);
+  ['E5', encodeBase64(iv), encodeBase64(data)].join(TOP_SEP);
 
 const parseEncryptedPayload = (raw: string) => {
   const [version, iv, data] = splitEscaped(raw, TOP_SEP);
-  if (version !== 'E4' || !iv || !data) return null;
+  if ((version !== 'E4' && version !== 'E5') || !iv || !data) return null;
   return { iv, data };
 };
 
@@ -651,39 +645,16 @@ const mergeImportedGroup = (groups: Group[], importedGroup: Group) => {
   return nextGroups;
 };
 
-const getOriginDotClassName = (origin: ItemOrigin) => {
-  switch (origin.type) {
-    case 'self':
-      return 'bg-klein';
-    case 'external':
-      return 'bg-amber-400';
-    case 'default':
-    default:
-      return 'bg-neutral-300';
-  }
-};
-
-const getOriginLabel = (origin: ItemOrigin) => {
-  switch (origin.type) {
-    case 'self':
-      return '自己添加';
-    case 'external':
-      return origin.ownerId ? `外部导入 · ${origin.ownerId}` : '外部导入';
-    case 'default':
-    default:
-      return '默认项目';
-  }
-};
-
 export default function App() {
   const [myId, setMyId] = useState<string>('local');
   const [groups, setGroups] = useState<Group[]>([createDefaultGroup()]);
   const [activeGroupId, setActiveGroupId] = useState<string>(DEFAULT_GROUP_ID);
   const [myTicks, setMyTicks] = useState<Record<string, boolean>>({});
+  const [boundPages, setBoundPages] = useState<Record<string, boolean>>({});
   const [nextGroupId, setNextGroupId] = useState(1);
   const [nextItemId, setNextItemId] = useState(0);
   const [sharedTicks, setSharedTicks] = useState<Record<string, boolean>>({});
-  const [mode, setMode] = useState<'edit' | 'compare-step-1' | 'compare-result'>('edit');
+  const [mode, setMode] = useState<AppMode>('edit');
   const [copySuccess, setCopySuccess] = useState(false);
   const [showQrCode, setShowQrCode] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
@@ -698,6 +669,18 @@ export default function App() {
   const activeGroup = useMemo(
     () => groups.find((group) => group.id === activeGroupId) ?? groups[0] ?? createDefaultGroup(),
     [activeGroupId, groups]
+  );
+  const activeGroupPages = useMemo(
+    () => getGroupPages(activeGroup, myTicks, boundPages),
+    [activeGroup, myTicks, boundPages]
+  );
+  const stackPages = useMemo(
+    () => activeGroupPages.filter((page) => !page.isBound),
+    [activeGroupPages]
+  );
+  const lowerStackPages = useMemo(
+    () => activeGroupPages.filter((page) => page.isBound),
+    [activeGroupPages]
   );
 
   useEffect(() => {
@@ -734,6 +717,7 @@ export default function App() {
       setGroups(currentState.groups);
       setActiveGroupId(currentState.activeGroupId);
       setMyTicks(currentState.ticks);
+      setBoundPages(currentState.boundPages);
       setNextGroupId(currentState.nextGroupId);
       setNextItemId(currentState.nextItemId);
       setIsHydrated(true);
@@ -749,6 +733,7 @@ export default function App() {
       const payload = normalizeState({
         groups,
         ticks: myTicks,
+        boundPages,
         activeGroupId,
         nextGroupId,
         nextItemId,
@@ -758,7 +743,38 @@ export default function App() {
     };
 
     persist();
-  }, [activeGroupId, groups, isHydrated, myId, myTicks, nextGroupId, nextItemId]);
+  }, [activeGroupId, boundPages, groups, isHydrated, myId, myTicks, nextGroupId, nextItemId]);
+
+  useEffect(() => {
+    setBoundPages((prev) => {
+      let changed = false;
+      const next = { ...prev };
+
+      Object.keys(prev).forEach((pageKey) => {
+        if (!prev[pageKey]) return;
+
+        const [groupId, pageIndexRaw] = pageKey.split(':');
+        const group = groups.find((entry) => entry.id === groupId);
+        const pageIndex = Number.parseInt(pageIndexRaw, 10);
+
+        if (!group || Number.isNaN(pageIndex)) {
+          delete next[pageKey];
+          changed = true;
+          return;
+        }
+
+        const items = group.items.slice(pageIndex * PAGE_SIZE, (pageIndex + 1) * PAGE_SIZE);
+        const isComplete = items.length > 0 && items.every((item) => !!myTicks[item.id]);
+
+        if (!isComplete) {
+          delete next[pageKey];
+          changed = true;
+        }
+      });
+
+      return changed ? next : prev;
+    });
+  }, [groups, myTicks]);
 
   const toggleTick = (itemId: string, e?: React.MouseEvent | React.ChangeEvent) => {
     const isChecking = !myTicks[itemId];
@@ -792,7 +808,7 @@ export default function App() {
   const createGroup = () => {
     const newGroup: Group = {
       id: createOwnedId(myId, nextGroupId),
-      title: `第 ${groups.length + 1} 页`,
+      title: `第 ${groups.length + 1} 组`,
       items: [],
     };
     setGroups((prev) => [...prev, newGroup]);
@@ -858,6 +874,10 @@ export default function App() {
     setNewItemText('');
   };
 
+  const movePageToLowerStack = (pageKey: string) => {
+    setBoundPages((prev) => ({ ...prev, [pageKey]: true }));
+  };
+
   const removeItem = (itemId: string) => {
     setGroups((prev) =>
       prev.map((group) =>
@@ -913,6 +933,7 @@ export default function App() {
     setGroups(next.groups);
     setActiveGroupId(next.activeGroupId);
     setMyTicks({});
+    setBoundPages({});
     setNextGroupId(next.nextGroupId);
     setNextItemId(next.nextItemId);
     setSharedTicks({});
@@ -944,6 +965,9 @@ export default function App() {
       });
       return next;
     });
+    setBoundPages((prev) =>
+      Object.fromEntries(Object.entries(prev).filter(([key]) => !key.startsWith(`${activeGroup.id}:`)))
+    );
     setMode('edit');
     setShowDeleteGroupConfirm(false);
     setEditingGroupId(null);
@@ -975,202 +999,61 @@ export default function App() {
 
   return (
     <div className="min-h-screen p-4 md:p-10 flex flex-col items-center">
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="w-full max-w-xl">
-        <nav className="mb-5 flex justify-between items-center px-2">
-          <div className="flex flex-col">
-            <span className="ui-label">人生清单</span>
-            <span className="ui-mono uppercase tracking-tighter">
-              {mode === 'edit' ? 'v2.0 / Notebook' : 'v2.0 / 对比'}
-            </span>
-          </div>
-          <div className="flex gap-3">
-            {mode !== 'edit' && (
-              <button onClick={backToEdit} className="ui-btn-circle" title="Back to Edit">
-                <ArrowLeft size={18} />
-              </button>
-            )}
-            {mode === 'edit' && (
-              <button onClick={() => setShowResetConfirm(true)} className="ui-btn-circle text-neutral-300 hover:text-klein" title="Reset to Default">
-                <RotateCcw size={18} />
-              </button>
-            )}
-            {mode === 'edit' && (
-              <button onClick={() => setShowQrCode(true)} className="ui-btn-circle" title="QR Code">
-                <QrCode size={18} />
-              </button>
-            )}
-            {mode === 'edit' && (
-              <button onClick={copyToClipboard} className={cn("ui-btn-circle", copySuccess && "active")} title="Share Link">
-                {copySuccess ? <Check size={18} /> : <Share2 size={18} />}
-              </button>
-            )}
-          </div>
-        </nav>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="w-full max-w-[1240px]">
+        <AppHeader
+          copySuccess={copySuccess}
+          mode={mode}
+          onBack={backToEdit}
+          onCopy={copyToClipboard}
+          onReset={() => setShowResetConfirm(true)}
+          onShowQrCode={() => setShowQrCode(true)}
+        />
 
-        <div className="mb-3 px-2">
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
-            {groups.map((group) => (
-              <button
-                key={group.id}
-                onClick={() => selectGroup(group.id)}
-                className={cn(
-                  "shrink-0 rounded-full border px-4 py-2 text-sm font-medium transition-all",
-                  group.id === activeGroupId
-                    ? "border-klein bg-klein text-white shadow-sm"
-                    : "border-neutral-200 bg-white text-neutral-500 hover:border-klein hover:text-klein"
-                )}
-                title={group.id}
-              >
-                {group.title}
-              </button>
-            ))}
-            {mode === 'edit' && (
-              <button
-                onClick={createGroup}
-                className="shrink-0 rounded-full border border-dashed border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-500 transition-all hover:border-klein hover:text-klein flex items-center gap-2"
-              >
-                <Plus size={14} />
-                新建一页
-              </button>
+        <GroupTabs
+          activeGroupId={activeGroupId}
+          groups={groups}
+          mode={mode}
+          onCreateGroup={createGroup}
+          onSelectGroup={selectGroup}
+        />
+
+        <LayoutGroup id={`page-stacks-${activeGroupId}`}>
+          <AnimatePresence mode="wait">
+            {mode === 'compare-result' && comparison ? (
+              <ComparisonPanel comparison={comparison} group={activeGroup} />
+            ) : (
+            <GroupWorkspace
+              activeGroup={activeGroup}
+              activeGroupPages={stackPages}
+              boundPageCount={lowerStackPages.length}
+              editingGroupId={editingGroupId}
+              groupTitleDraft={groupTitleDraft}
+              mode={mode}
+              newItemText={newItemText}
+              pageSize={PAGE_SIZE}
+              paperRef={paperRef}
+              ticks={myTicks}
+              onAddItem={addItem}
+              onBindPage={movePageToLowerStack}
+                onDeleteGroup={() => setShowDeleteGroupConfirm(true)}
+                onDraftChange={setGroupTitleDraft}
+                onItemTextChange={setNewItemText}
+                onRemoveItem={removeItem}
+                onRenameCancel={cancelRenameGroup}
+                onRenameSave={saveGroupTitle}
+                onRenameStart={startRenameGroup}
+                onToggleTick={toggleTick}
+              />
             )}
-          </div>
-          <div className="ui-mono px-1 opacity-45">
-            当前页 ID: {activeGroup.id}
-          </div>
-        </div>
+          </AnimatePresence>
 
-        <div className="hybrid-paper" ref={paperRef}>
-          <div className="paper-lines">
-            <div className="paper-content">
-              <div className="flex items-center justify-between gap-4 border-b border-neutral-100 on-lines">
-                <div className="min-w-0">
-                  {editingGroupId === activeGroup.id ? (
-                    <input
-                      autoFocus
-                      type="text"
-                      value={groupTitleDraft}
-                      onChange={(e) => setGroupTitleDraft(e.target.value)}
-                      onBlur={saveGroupTitle}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') saveGroupTitle();
-                        if (e.key === 'Escape') cancelRenameGroup();
-                      }}
-                      className="list-text w-full bg-transparent border-none outline-none"
-                    />
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={startRenameGroup}
-                      className="list-text truncate-text text-left hover:text-klein transition-colors"
-                      title="点击重命名这一页"
-                    >
-                      {activeGroup.title}
-                    </button>
-                  )}
-                  <div className="ui-mono opacity-45 truncate-text">{activeGroup.id}</div>
-                </div>
-                <div className="flex items-center gap-3 shrink-0">
-                  <div className="ui-mono opacity-35">[{activeGroup.items.length}]</div>
-                  {mode === 'edit' && activeGroup.id !== DEFAULT_GROUP_ID && (
-                    <button
-                      onClick={() => setShowDeleteGroupConfirm(true)}
-                      className="text-neutral-300 hover:text-klein transition-colors"
-                      title="Delete Page"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              <AnimatePresence mode="wait">
-                {mode === 'compare-result' && comparison ? (
-                  <motion.div
-                    key={`result-${activeGroup.id}`}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    className="space-y-0 pt-2"
-                  >
-                    <ResultSection title="共同完成" items={comparison.bothDone} color="bg-klein" />
-                    <ResultSection title="我已完成" items={comparison.iDoneHeNot} color="bg-neutral-800" />
-                    <ResultSection title="对方已完成" items={comparison.heDoneINot} color="bg-neutral-400" />
-                    <ResultSection title="都没有完成" items={comparison.bothNotDone} color="bg-neutral-200" />
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key={`list-${activeGroup.id}`}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                  >
-                    {mode === 'compare-step-1' && (
-                      <div className="text-klein font-bold list-text on-lines mb-9">
-                        收到这一页的同步请求：请在下方勾选你的进度以进行对比。
-                        <br />
-                        ---
-                      </div>
-                    )}
-
-                    <ul className="space-y-0">
-                      {activeGroup.items.map((item) => (
-                        <motion.li key={item.id} className="group relative flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            checked={!!myTicks[item.id]}
-                            onChange={(e) => toggleTick(item.id, e)}
-                            className="rams-checkbox absolute left-[-55px]"
-                          />
-                          <div className="flex flex-1 items-center gap-2 cursor-pointer" onClick={(e) => toggleTick(item.id, e)}>
-                            <span
-                              className={cn(
-                                "list-text on-lines select-none marker-text",
-                                myTicks[item.id] && "is-highlighted"
-                              )}
-                              style={getMarkerStyle(item.text)}
-                            >
-                              <span className="marker-stroke" aria-hidden="true" />
-                              <span className="marker-stroke marker-stroke-secondary" aria-hidden="true" />
-                              <span className="marker-label">{item.text}</span>
-                            </span>
-                            {item.origin.type !== 'default' && (
-                              <div
-                                className={cn("w-1.5 h-1.5 rounded-full shrink-0", getOriginDotClassName(item.origin))}
-                                title={getOriginLabel(item.origin)}
-                              />
-                            )}
-                          </div>
-                          {mode === 'edit' && (
-                            <button
-                              onClick={() => removeItem(item.id)}
-                              className="opacity-0 group-hover:opacity-100 p-1 text-neutral-300 hover:text-klein transition-all ml-auto relative z-10"
-                            >
-                              <X size={16} />
-                            </button>
-                          )}
-                        </motion.li>
-                      ))}
-                    </ul>
-
-                    {mode === 'edit' && (
-                      <div className="input-row border-t border-neutral-100 mt-9 on-lines">
-                        <Plus size={18} className="text-klein mr-4 shrink-0" />
-                        <input
-                          type="text"
-                          value={newItemText}
-                          onChange={(e) => setNewItemText(e.target.value)}
-                          onKeyDown={(e) => e.key === 'Enter' && addItem()}
-                          placeholder={`给「${activeGroup.title}」添加新项目...`}
-                          className="flex-1 bg-transparent border-none outline-none list-text on-lines placeholder:text-neutral-200 h-full"
-                        />
-                      </div>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
-        </div>
+          <LowerStackPanel
+            pages={lowerStackPages}
+            ticks={myTicks}
+            onRemoveItem={removeItem}
+            onToggleTick={toggleTick}
+          />
+        </LayoutGroup>
 
         <footer className="mt-10 flex flex-col items-center">
           {mode === 'compare-step-1' && (
@@ -1179,7 +1062,7 @@ export default function App() {
               className="px-12 py-4 bg-neutral-900 text-white rounded-full font-medium tracking-tight shadow-xl hover:bg-black transition-all flex items-center gap-3"
             >
               <Users size={18} />
-              对比这一页
+              对比这一组
             </button>
           )}
           {mode === 'edit' && (
@@ -1201,27 +1084,11 @@ export default function App() {
 
         <AnimatePresence>
           {showResetConfirm && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-neutral-900/40 backdrop-blur-sm"
-              onClick={() => setShowResetConfirm(false)}
+            <ModalDialog
+              title="确认重置吗？"
+              body="这会清空你本地所有组、勾选、自己新增的项目、装订记录，以及已导入的外部组，并恢复成默认第一组。"
+              onClose={() => setShowResetConfirm(false)}
             >
-              <motion.div
-                initial={{ scale: 0.94, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.94, opacity: 0 }}
-                className="bg-white p-7 rounded-3xl shadow-2xl max-w-sm w-full flex flex-col gap-5"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="space-y-2">
-                  <h3 className="text-klein font-bold text-lg">确认重置吗？</h3>
-                  <p className="text-neutral-500 text-sm leading-6">
-                    这会清空你本地所有页签、勾选、自己新增的项目，以及已导入的外部页，并恢复成默认第一页。
-                  </p>
-                </div>
-
                 <div className="flex gap-3">
                   <button
                     onClick={() => setShowResetConfirm(false)}
@@ -1236,32 +1103,15 @@ export default function App() {
                     确认重置
                   </button>
                 </div>
-              </motion.div>
-            </motion.div>
+            </ModalDialog>
           )}
 
           {showDeleteGroupConfirm && activeGroup.id !== DEFAULT_GROUP_ID && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-neutral-900/40 backdrop-blur-sm"
-              onClick={() => setShowDeleteGroupConfirm(false)}
+            <ModalDialog
+              title="删除这一组吗？"
+              body={`这会删除「${activeGroup.title}」这一组、它下面的所有分页，以及相关勾选和装订记录。默认组不能删除。`}
+              onClose={() => setShowDeleteGroupConfirm(false)}
             >
-              <motion.div
-                initial={{ scale: 0.94, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.94, opacity: 0 }}
-                className="bg-white p-7 rounded-3xl shadow-2xl max-w-sm w-full flex flex-col gap-5"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="space-y-2">
-                  <h3 className="text-klein font-bold text-lg">删除这一页吗？</h3>
-                  <p className="text-neutral-500 text-sm leading-6">
-                    这会删除「{activeGroup.title}」这一页，以及这页里的项目和勾选记录。默认页不能删除。
-                  </p>
-                </div>
-
                 <div className="flex gap-3">
                   <button
                     onClick={() => setShowDeleteGroupConfirm(false)}
@@ -1276,8 +1126,7 @@ export default function App() {
                     确认删除
                   </button>
                 </div>
-              </motion.div>
-            </motion.div>
+            </ModalDialog>
           )}
 
           {showQrCode && (
@@ -1296,7 +1145,7 @@ export default function App() {
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="text-center space-y-2">
-                  <h3 className="text-klein font-bold text-lg">分享当前这一页</h3>
+                  <h3 className="text-klein font-bold text-lg">分享当前这一组</h3>
                   <p className="text-neutral-400 text-sm">对方扫码后，会导入「{activeGroup.title}」这一组</p>
                 </div>
 
@@ -1319,34 +1168,6 @@ export default function App() {
           )}
         </AnimatePresence>
       </motion.div>
-    </div>
-  );
-}
-
-function ResultSection({ title, items, color }: { title: string; items: ListItem[]; color: string }) {
-  if (items.length === 0) return null;
-
-  return (
-    <div className="mb-4">
-      <h3 className="flex items-center gap-3 border-b border-neutral-100 on-lines">
-        <div className={cn("w-1.5 h-4 rounded-full", color)} />
-        <span className="ui-label text-neutral-400">{title}</span>
-        <span className="ui-mono ml-auto">[{items.length}]</span>
-      </h3>
-      <ul className="space-y-0">
-        {items.map((item) => (
-          <li key={item.id} className="flex items-center gap-3">
-            <span className="w-1 h-1 rounded-full bg-neutral-200 shrink-0" />
-            <span className="list-text on-lines text-neutral-700 flex-1">{item.text}</span>
-            {item.origin.type !== 'default' && (
-              <div
-                className={cn("w-1.5 h-1.5 rounded-full shrink-0", getOriginDotClassName(item.origin))}
-                title={getOriginLabel(item.origin)}
-              />
-            )}
-          </li>
-        ))}
-      </ul>
     </div>
   );
 }
