@@ -503,6 +503,7 @@ export default function App() {
                     onClick={(e) => e.stopPropagation()}
                   >
                     <Notebook
+                      id={activeGroup.id}
                       closed={false}
                       coverTitle={activeGroup.title}
                       pages={lowerStackPages}
@@ -541,6 +542,7 @@ export default function App() {
                         title={group.title}
                       >
                         <Notebook
+                          id={group.id}
                           className="origin-top mt-0"
                           style={{ transform: 'scale(0.85)' }}
                           closed={true}

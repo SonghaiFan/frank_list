@@ -6,11 +6,13 @@ import { PAGE_CARD_HEIGHT_PX, PAGE_CARD_WIDTH_PX } from '../lib/workspace-consta
 interface CardEndProps {
   className?: string;
   isActive?: boolean;
+  layoutId?: string;
 }
 
 export const CardEnd = forwardRef<HTMLDivElement, CardEndProps>(({
   className,
   isActive = true,
+  layoutId,
 }, ref) => {
   return (
     <motion.div
@@ -21,7 +23,7 @@ export const CardEnd = forwardRef<HTMLDivElement, CardEndProps>(({
       )}
       style={{ width: `${PAGE_CARD_WIDTH_PX}px`, height: `${PAGE_CARD_HEIGHT_PX}px` }}
       layout
-      layoutId="notebook-end"
+      layoutId={layoutId}
       transition={{ type: 'spring', stiffness: 260, damping: 30 }}
     >
       <div className="absolute inset-0 opacity-10 pointer-events-none bg-linear-to-bl from-transparent to-black/5" />

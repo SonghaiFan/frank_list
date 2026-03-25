@@ -9,6 +9,7 @@ import { CardCover } from './CardCover';
 import { CardEnd } from './CardEnd';
 
 interface NotebookProps {
+  id?: string;
   className?: string;
   closed?: boolean;
   coverTitle?: string;
@@ -20,11 +21,14 @@ interface NotebookProps {
 }
 
 
-function NotebookSpine({ height = PAGE_CARD_HEIGHT_PX }: { height?: number }) {
+function NotebookSpine({ height = PAGE_CARD_HEIGHT_PX, layoutId }: { height?: number; layoutId?: string }) {
   const count = Math.floor(height / PAGE_LINE_HEIGHT_PX);
   
   return (
-    <div className="absolute left-1/2 top-0 w-12 -translate-x-1/2 z-100 flex flex-col pointer-events-none select-none">
+    <motion.div 
+      layoutId={layoutId}
+      className="absolute left-1/2 top-0 w-12 -translate-x-1/2 z-100 flex flex-col pointer-events-none select-none"
+    >
       {Array.from({ length: count }).map((_, i) => (
         <div key={i} className="relative w-full flex items-center justify-center" style={{ height: `${PAGE_LINE_HEIGHT_PX}px` }}>
             {(i >= 2 && i < count - 2) && (
@@ -32,7 +36,7 @@ function NotebookSpine({ height = PAGE_CARD_HEIGHT_PX }: { height?: number }) {
             )}
        </div>
       ))}
-    </div>
+    </motion.div>
   );
 }
 
@@ -40,6 +44,7 @@ const COLLECTION_STEP_MS = 140;
 const COLLECTION_BASE_MS = 980;
 
 export function Notebook({
+  id = 'default',
   className,
   closed = false,
   coverTitle,
@@ -51,7 +56,7 @@ export function Notebook({
 }: NotebookProps) {
   const allPages = useMemo(() => {
     const coverPage: GroupPage = {
-      key: 'notebook-cover',
+      key: `notebook-cover-${id}`,
       type: 'cover',
       groupId: 'system',
       groupTitle: 'Cover',
@@ -62,7 +67,7 @@ export function Notebook({
     };
     
     const endPage: GroupPage = {
-      key: 'notebook-end',
+      key: `notebook-end-${id}`,
       type: 'end',
       groupId: 'system',
       groupTitle: 'End',
@@ -73,7 +78,7 @@ export function Notebook({
     };
     
     return [coverPage, ...pages, endPage];
-  }, [pages]);
+  }, [pages, id]);
 
   const [focusedPageKey, setFocusedPageKey] = useState<string | null>(allPages[0]?.key ?? null);
   const [collectionState, setCollectionState] = useState<{ active: boolean; incomingKeys: string[] }>({
@@ -86,7 +91,7 @@ export function Notebook({
   useEffect(() => {
     const nextKeys = allPages.map((page) => page.key);
     const newlyAddedKeys = nextKeys.filter(
-      (key) => !previousKeysRef.current.includes(key) && key !== 'notebook-cover' && key !== 'notebook-end'
+      (key) => !previousKeysRef.current.includes(key) && key !== `notebook-cover-${id}` && key !== `notebook-end-${id}`
     );
 
     if (closed) {
@@ -210,7 +215,7 @@ export function Notebook({
               ease: [0.22, 1, 0.36, 1],
             }}
           >
-          <NotebookSpine />
+          <NotebookSpine layoutId={`notebook-spine-${id}`} />
           
           <div 
             className="relative w-full max-w-125 perspective-[2000px]"
@@ -235,7 +240,6 @@ export function Notebook({
 
                 const collectionIndex = collectionState.incomingKeys.indexOf(page.key);
                 const isIncoming = collectionIndex !== -1;
-                const coverMidRotateY = rotateY === 0 ? -105 : -75;
                 
                 const zIndex = closed
                   ? allPages.length - index
@@ -258,13 +262,7 @@ export function Notebook({
                       transformOrigin: 'left center',
                     }}
                     initial={false}
-                    animate={isCollecting && page.type === 'cover' ? {
-                      x,
-                      y,
-                      rotateY: [rotateY, coverMidRotateY, rotateY],
-                      rotateZ: [0, -3, 0],
-                      opacity,
-                    } : isCollecting && isIncoming ? {
+                    animate={isCollecting && isIncoming ? {
                       x: [-240, 20, x],
                       y: [-120, 10, y],
                       rotateY,
@@ -279,13 +277,7 @@ export function Notebook({
                       opacity,
                       scale: 1,
                     }}
-                    transition={isCollecting && page.type === 'cover'
-                      ? {
-                          duration: 0.92,
-                          times: [0, 0.5, 1],
-                          ease: [0.22, 1, 0.36, 1],
-                        }
-                      : isCollecting && isIncoming
+                    transition={isCollecting && isIncoming
                         ? {
                             duration: 0.88,
                             delay: collectionIndex * 0.14,
@@ -304,12 +296,13 @@ export function Notebook({
                         <CardCover 
                           isActive={isCurrent} 
                           title={coverTitle} 
-                          layoutId={`cover-${pages[0]?.groupId || 'default'}`}
+                          layoutId={page.key}
                           className={shadowClass}
                         />
                       ) : page.type === 'end' ? (
                         <CardEnd 
                           isActive={isCurrent}
+                          layoutId={page.key}
                           className={shadowClass}
                         />
                       ) : (
