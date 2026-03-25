@@ -83,11 +83,6 @@ export function PageCard({
           </div>
 
           <div className="flex-1 pl-18 pt-0">
-          {page.items.length === 0 ? (
-            <div className="text-neutral-300 list-text on-lines pt-2.5">
-              {`这一页还没有内容，继续往这一组里加 item，它会先排在这里；超过 ${pageSize} 个后会自动生成下一页。`}
-            </div>
-          ) : (
             <motion.ul
               className={cn(
                 'space-y-0',
@@ -142,7 +137,6 @@ export function PageCard({
                 </motion.li>
               ))}
             </motion.ul>
-          )}
 
           {interactive && showAddItemInput && (
             <div className="input-row on-lines">
@@ -159,8 +153,8 @@ export function PageCard({
           )}
           </div>
           
-          <div className="mt-auto px-8 pb-6 flex justify-end opacity-40">
-            <span className="ui-mono text-[10px] tracking-[0.2em] text-neutral-400 font-medium">
+          <div className="mt-auto h-[36px] px-8 flex items-center justify-end opacity-40">
+            <span className="ui-mono text-[10px] tracking-[0.2em] text-neutral-400 font-medium translate-y-[1px]">
               {String(page.pageIndex + 1).padStart(2, '0')}
             </span>
           </div>
