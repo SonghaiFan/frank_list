@@ -434,18 +434,27 @@ export default function App() {
   }, [activeGroup.items, mode, myTicks, sharedTicks]);
 
   return (
-    <div className="min-h-screen p-4 md:p-10 flex flex-col items-center">
+    <div
+      className={`min-h-screen p-4 md:p-10 flex flex-col items-center transition-colors ${
+        !isGalleryClosed ? 'cursor-zoom-out' : ''
+      }`}
+      onClick={() => {
+        if (!isGalleryClosed && mode === 'edit') setIsGalleryClosed(true);
+      }}
+    >
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="w-full max-w-[1240px]">
-        <AppHeader
-          copySuccess={copySuccess}
-          isGalleryClosed={isGalleryClosed}
-          mode={mode}
-          onBack={backToEdit}
-          onCopy={copyToClipboard}
-          onReset={() => setShowResetConfirm(true)}
-          onShowQrCode={() => setShowQrCode(true)}
-          onToggleGalleryClosed={() => setIsGalleryClosed((prev) => !prev)}
-        />
+        <div className="w-full" onClick={(e) => e.stopPropagation()}>
+          <AppHeader
+            copySuccess={copySuccess}
+            isGalleryClosed={isGalleryClosed}
+            mode={mode}
+            onBack={backToEdit}
+            onCopy={copyToClipboard}
+            onReset={() => setShowResetConfirm(true)}
+            onShowQrCode={() => setShowQrCode(true)}
+            onToggleGalleryClosed={() => setIsGalleryClosed((prev) => !prev)}
+          />
+        </div>
 
         <AnimatePresence>
           <motion.div
@@ -467,13 +476,12 @@ export default function App() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="w-full flex flex-col items-center min-h-[80vh] cursor-zoom-out"
-                  onClick={() => setIsGalleryClosed(true)}
+                  className="w-full flex flex-col items-center min-h-[80vh]"
                 >
                   <motion.div
                     key={activeGroup.id}
                     layout
-                    transition={{ layout: { type: 'spring', stiffness: 210, damping: 28 } }}
+                    transition={{ layout: { type: 'spring', stiffness: 350, damping: 30 } }}
                     onClick={(e) => e.stopPropagation()}
                     className="cursor-default w-full max-w-[800px]"
                   >
@@ -498,7 +506,7 @@ export default function App() {
                     key={`notebook-${activeGroup.id}`}
                     layoutId={`notebook-${activeGroup.id}`}
                     layout
-                    transition={{ layout: { type: 'spring', stiffness: 210, damping: 28 } }}
+                    transition={{ layout: { type: 'spring', stiffness: 350, damping: 30 } }}
                     className="w-full flex justify-center cursor-default"
                     onClick={(e) => e.stopPropagation()}
                   >
@@ -538,7 +546,7 @@ export default function App() {
                            height: PAGE_CARD_HEIGHT_PX,
                            transformOrigin: 'top center',
                         }}
-                        transition={{ layout: { type: 'spring', stiffness: 210, damping: 28 } }}
+                        transition={{ layout: { type: 'spring', stiffness: 350, damping: 30 } }}
                         title={group.title}
                       >
                         <Notebook

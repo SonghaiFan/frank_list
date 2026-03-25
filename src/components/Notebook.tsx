@@ -285,7 +285,18 @@ export function Notebook({
                             ease: [0.16, 1, 0.3, 1],
                           }
                         : { type: 'spring', stiffness: 220, damping: 28 }}
-                    onClick={closed ? onOpen : () => setFocusedPageKey(page.key)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (closed) {
+                        onOpen?.();
+                      } else {
+                        if (isCurrent) {
+                          goNextPage();
+                        } else {
+                          setFocusedPageKey(page.key);
+                        }
+                      }
+                    }}
                   >
                     <div
                       className="absolute inset-0 backface-hidden"
