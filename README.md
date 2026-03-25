@@ -1,20 +1,32 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Frank's Life List
 
-# Run and deploy your AI Studio app
+A life list to-do list application designed for simplicity.
 
-This contains everything you need to run your app locally.
+## Features
 
-View your app in AI Studio: https://ai.studio/apps/50898d19-5ade-4a90-bfc7-01bd034acfd4
+- **No Login Required**: Start using it immediately without creating an account.
+- **Asynchronous Sync**: Sync your lists without needing a real-time server connection.
+- **Non-Cloud Storage**: Your data lives locally on your device.
+- **Local Compressed String Storage**: Efficient data handling using local compression.
+- **Super Simple Sharing**: Easy sharing and alignment of your lists.
 
-## Run Locally
-
-**Prerequisites:**  Node.js
-
+## Getting Started
 
 1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+   ```bash
+   npm install
+   ```
+
+2. Run the app:
+   ```bash
+   npm run dev
+   ```
+
+## Technology Stack
+
+- React
+- Vite
+- TypeScript
+- Tailwind CSS
+- Lucide React (Icons)
+- Framer Motion (Animations)
