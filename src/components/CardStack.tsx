@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { motion } from 'motion/react';
 import type { AppMode, GroupPage } from '../lib/notebook-types';
 import { cn } from '../lib/cn';
@@ -78,14 +78,6 @@ export function CardStack({
     && isLastPageFocused
     && !!currentPage
     && !isCurrentPageFull;
-  const goPrevPage = () => {
-    const prevPage = pages[Math.max(0, safeFocusedPageIndex - 1)];
-    if (prevPage) setFocusedPageKey(prevPage.key);
-  };
-  const goNextPage = () => {
-    const nextPage = pages[Math.min(pages.length - 1, safeFocusedPageIndex + 1)];
-    if (nextPage) setFocusedPageKey(nextPage.key);
-  };
 
   const getStackClasses = (offset: number) => {
     if (offset === 0) return 'translate-x-0 translate-y-0 scale-100 opacity-100';
@@ -98,7 +90,10 @@ export function CardStack({
 
   if (pages.length === 0) {
     return (
-      <div className={cn('relative flex min-h-[700px] items-start justify-center overflow-visible px-6 pb-8 pt-2 max-md:min-h-[680px] max-md:px-0', className)}>
+      <div 
+        className={cn('relative flex items-start justify-center overflow-visible px-6 pb-8 pt-2 max-md:px-0', className)}
+        style={{ minHeight: `${PAGE_CARD_HEIGHT_PX + 88}px` }}
+      >
         <div
           className="relative z-[2] flex items-center justify-center rounded-[6px] border border-dashed border-neutral-200 bg-white/55 px-6 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]"
           style={{ width: `${PAGE_CARD_WIDTH_PX}px`, minHeight: `${PAGE_CARD_HEIGHT_PX}px` }}
@@ -113,50 +108,20 @@ export function CardStack({
   }
 
   return (
-    <div className={cn('relative flex min-h-[700px] items-start justify-center overflow-visible px-6 pb-8 pt-2 max-md:min-h-[680px] max-md:px-0', className)}>
-      {(pages.length > 1 || areAllPagesFull) && (
-        <>
-          {areAllPagesFull && isLastPageFocused ? (
-            <button
-              type="button"
-              onClick={onAppendPage}
-              className="absolute right-0 top-[38%] z-20 flex h-12 min-w-12 items-center justify-center gap-1 rounded-full border-none bg-white/92 px-4 text-gray-900/85 shadow-[0_12px_26px_rgba(0,0,0,0.1)] transition-all hover:-translate-y-px hover:bg-white max-md:bottom-[18px] max-md:right-[calc(50%-58px)] max-md:top-auto"
-              title="Add new page"
-            >
-              <Plus size={18} />
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={goNextPage}
-              disabled={safeFocusedPageIndex === pages.length - 1}
-              className="absolute right-0 top-[38%] z-20 flex h-12 w-12 items-center justify-center rounded-full border-none bg-white/88 text-gray-900/85 shadow-[0_12px_26px_rgba(0,0,0,0.1)] transition-all hover:-translate-y-px hover:bg-white disabled:cursor-not-allowed disabled:opacity-25 max-md:bottom-[18px] max-md:right-[calc(50%-58px)] max-md:top-auto"
-              title="Next page"
-            >
-              <ChevronRight size={28} />
-            </button>
-          )}
-          {areAllPagesFull && pages.length > 1 && safeFocusedPageIndex === 0 && !isLastPageFocused ? (
-            <button
-              type="button"
-              onClick={onAppendPage}
-              className="absolute left-0 top-[38%] z-20 flex h-12 min-w-12 items-center justify-center gap-1 rounded-full border-none bg-white/92 px-4 text-gray-900/85 shadow-[0_12px_26px_rgba(0,0,0,0.1)] transition-all hover:-translate-y-px hover:bg-white max-md:bottom-[18px] max-md:left-[calc(50%-58px)] max-md:top-auto"
-              title="Add new page"
-            >
-              <Plus size={18} />
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={goPrevPage}
-              disabled={safeFocusedPageIndex === 0}
-              className="absolute left-0 top-[38%] z-20 flex h-12 w-12 items-center justify-center rounded-full border-none bg-white/88 text-gray-900/85 shadow-[0_12px_26px_rgba(0,0,0,0.1)] transition-all hover:-translate-y-px hover:bg-white disabled:cursor-not-allowed disabled:opacity-25 max-md:bottom-[18px] max-md:left-[calc(50%-58px)] max-md:top-auto"
-              title="Previous page"
-            >
-              <ChevronLeft size={28} />
-            </button>
-          )}
-        </>
+    <div 
+      className={cn('relative flex items-start justify-center overflow-visible px-6 pb-8 pt-2 max-md:px-0', className)}
+      style={{ minHeight: `${PAGE_CARD_HEIGHT_PX + 88}px` }}
+    >
+      {areAllPagesFull && isLastPageFocused && (
+        <button
+          type="button"
+          onClick={onAppendPage}
+          className="absolute right-0 z-20 flex h-12 min-w-12 items-center justify-center gap-1 rounded-full border-none bg-white/92 px-4 text-gray-900/85 shadow-[0_12px_26px_rgba(0,0,0,0.1)] transition-all hover:-translate-y-px hover:bg-white max-md:bottom-[18px] max-md:right-[calc(50%-58px)] max-md:top-auto"
+          style={{ top: `${(PAGE_CARD_HEIGHT_PX / 2) - 24}px` }}
+          title="Add new page"
+        >
+          <Plus size={18} />
+        </button>
       )}
 
       {pages.map((page, index) => {

@@ -28,3 +28,50 @@ export interface GroupPage {
   isComplete: boolean;
   isBound: boolean;
 }
+
+export interface PersistedAppState {
+  v: number;
+  groups: Group[];
+  ticks: Record<string, boolean>;
+  boundPages: Record<string, boolean>;
+  extraPageCounts: Record<string, number>;
+  activeGroupId: string;
+  nextGroupId: number;
+  nextItemId: number;
+}
+
+export type CompactLocalItem = number | [string, string] | [string, string, string];
+
+export interface CompactLocalGroup {
+  id: string;
+  n: string;
+  i: CompactLocalItem[];
+  t: string;
+}
+
+export interface CompactLocalState {
+  v: number;
+  a: string;
+  c: [string, string];
+  b: string[];
+  p?: [string, string][];
+  g: CompactLocalGroup[];
+}
+
+export interface SharedGroupData {
+  v: number;
+  o: string;
+  g: string;
+  n: string;
+  i: (number | [number, number] | [string, string])[];
+  t: string;
+}
+
+export interface ImportedGroupPayload {
+  group: Group;
+  sharedTicks: Record<string, boolean>;
+}
+
+export interface ConfettiHandle {
+  spawn: (x: number, y: number) => void;
+}

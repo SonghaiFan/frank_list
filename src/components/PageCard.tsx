@@ -145,7 +145,7 @@ export function PageCard({
           )}
 
           {interactive && showAddItemInput && (
-            <div className="input-row border-t border-neutral-100 mt-9 on-lines">
+            <div className="input-row on-lines">
               <Plus size={18} className="text-klein mr-4 shrink-0" />
               <input
                 type="text"

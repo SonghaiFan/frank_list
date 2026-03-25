@@ -3,7 +3,7 @@ import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { motion } from 'motion/react';
 import { cn } from '../lib/cn';
 import type { GroupPage } from '../lib/notebook-types';
-import { PAGE_CARD_HEIGHT_PX, PAGE_CARD_WIDTH_PX, PAGE_ITEM_CAPACITY } from '../lib/workspace-constants';
+import { PAGE_CARD_HEIGHT_PX, PAGE_CARD_WIDTH_PX, PAGE_ITEM_CAPACITY, PAGE_LINE_HEIGHT_PX } from '../lib/workspace-constants';
 import { PageCard } from './PageCard';
 import { CardCover } from './CardCover';
 import { CardEnd } from './CardEnd';
@@ -20,15 +20,16 @@ interface NotebookProps {
 }
 
 
-function NotebookSpine({ height = 600 }: { height?: number }) {
-  const LINE_HEIGHT = 36;
-  const count = Math.floor(height / LINE_HEIGHT);
+function NotebookSpine({ height = PAGE_CARD_HEIGHT_PX }: { height?: number }) {
+  const count = Math.floor(height / PAGE_LINE_HEIGHT_PX);
   
   return (
     <div className="absolute left-1/2 top-0 w-12 -translate-x-1/2 z-[100] flex flex-col pointer-events-none select-none">
       {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="relative w-full flex items-center justify-center" style={{ height: `${LINE_HEIGHT}px` }}>
-            <div className="h-4 w-16 bg-gradient-to-r from-neutral-400 via-neutral-100 to-neutral-400 rounded-full shadow-sm transform -rotate-2 border border-neutral-300" />
+        <div key={i} className="relative w-full flex items-center justify-center" style={{ height: `${PAGE_LINE_HEIGHT_PX}px` }}>
+            {(i >= 2 && i < count - 2) && (
+              <div className="h-4 w-16 bg-gradient-to-r from-neutral-400 via-neutral-100 to-neutral-400 rounded-full shadow-sm transform -rotate-2 border border-neutral-300" />
+            )}
        </div>
       ))}
     </div>
@@ -148,9 +149,10 @@ export function Notebook({
     <motion.div 
       layout
       className={cn(
-        'relative flex min-h-[700px] w-full items-start justify-center perspective-[2000px] mt-10',
+        'relative flex w-full items-start justify-center perspective-[2000px] mt-10',
         className
       )}
+      style={{ minHeight: `${PAGE_CARD_HEIGHT_PX + 88}px` }}
       initial={{ opacity: 0, scale: 0.9, y: -200 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.9, y: -200 }}
@@ -167,7 +169,8 @@ export function Notebook({
                 type="button"
                 onClick={goPrevPage}
                 disabled={!canGoPrev}
-                className="absolute left-4 top-[300px] z-50 flex h-12 w-12 items-center justify-center rounded-full border border-neutral-200 bg-white/80 text-[#666] shadow-[0_8px_16px_rgba(0,0,0,0.06)] backdrop-blur-sm transition-all hover:-translate-y-px hover:border-klein hover:text-klein disabled:cursor-not-allowed disabled:opacity-35"
+                className="absolute left-4 z-50 flex h-12 w-12 items-center justify-center rounded-full border border-neutral-200 bg-white/80 text-[#666] shadow-[0_8px_16px_rgba(0,0,0,0.06)] backdrop-blur-sm transition-all hover:-translate-y-px hover:border-klein hover:text-klein disabled:cursor-not-allowed disabled:opacity-35"
+                style={{ top: `${(PAGE_CARD_HEIGHT_PX / 2) - 24}px` }}
                 title="Previous page"
               >
                 <ArrowLeft size={20} />
@@ -176,7 +179,8 @@ export function Notebook({
                 type="button"
                 onClick={goNextPage}
                 disabled={!canGoNext}
-                className="absolute right-4 top-[300px] z-50 flex h-12 w-12 items-center justify-center rounded-full border border-neutral-200 bg-white/80 text-[#666] shadow-[0_8px_16px_rgba(0,0,0,0.06)] backdrop-blur-sm transition-all hover:-translate-y-px hover:border-klein hover:text-klein disabled:cursor-not-allowed disabled:opacity-35"
+                className="absolute right-4 z-50 flex h-12 w-12 items-center justify-center rounded-full border border-neutral-200 bg-white/80 text-[#666] shadow-[0_8px_16px_rgba(0,0,0,0.06)] backdrop-blur-sm transition-all hover:-translate-y-px hover:border-klein hover:text-klein disabled:cursor-not-allowed disabled:opacity-35"
+                style={{ top: `${(PAGE_CARD_HEIGHT_PX / 2) - 24}px` }}
                 title="Next page"
               >
                 <ArrowRight size={20} />
@@ -208,7 +212,10 @@ export function Notebook({
           >
           <NotebookSpine />
           
-          <div className="relative w-full h-[620px] max-w-[500px] perspective-[2000px]">
+          <div 
+            className="relative w-full max-w-[500px] perspective-[2000px]"
+            style={{ height: `${PAGE_CARD_HEIGHT_PX + 8}px` }}
+          >
               {allPages.map((page, index) => {
                 const distanceFromFocus = index - safeFocusedPageIndex;
                 const isPast = distanceFromFocus < 0;
