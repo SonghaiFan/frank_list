@@ -24,11 +24,11 @@ function NotebookSpine({ height = PAGE_CARD_HEIGHT_PX }: { height?: number }) {
   const count = Math.floor(height / PAGE_LINE_HEIGHT_PX);
   
   return (
-    <div className="absolute left-1/2 top-0 w-12 -translate-x-1/2 z-[100] flex flex-col pointer-events-none select-none">
+    <div className="absolute left-1/2 top-0 w-12 -translate-x-1/2 z-100 flex flex-col pointer-events-none select-none">
       {Array.from({ length: count }).map((_, i) => (
         <div key={i} className="relative w-full flex items-center justify-center" style={{ height: `${PAGE_LINE_HEIGHT_PX}px` }}>
             {(i >= 2 && i < count - 2) && (
-              <div className="h-4 w-16 bg-gradient-to-r from-neutral-400 via-neutral-100 to-neutral-400 rounded-full shadow-sm transform -rotate-2 border border-neutral-300" />
+              <div className="h-4 w-16 bg-linear-to-r from-neutral-400 via-neutral-100 to-neutral-400 rounded-full shadow-sm transform -rotate-2 border border-neutral-300" />
             )}
        </div>
       ))}
@@ -213,7 +213,7 @@ export function Notebook({
           <NotebookSpine />
           
           <div 
-            className="relative w-full max-w-[500px] perspective-[2000px]"
+            className="relative w-full max-w-125 perspective-[2000px]"
             style={{ height: `${PAGE_CARD_HEIGHT_PX + 8}px` }}
           >
               {allPages.map((page, index) => {
@@ -296,7 +296,7 @@ export function Notebook({
                     onClick={closed ? onOpen : () => setFocusedPageKey(page.key)}
                   >
                     <div
-                      className="absolute inset-0 [backface-visibility:hidden]"
+                      className="absolute inset-0 backface-hidden"
                       style={{ pointerEvents: isCurrent ? 'auto' : 'none' }}
                     >
                       {/* Front of the page */}
@@ -327,11 +327,11 @@ export function Notebook({
                       )}
                     </div>
                     <div
-                      className="absolute inset-0 rounded-[6px] border border-[rgba(0,47,167,0.08)] bg-[linear-gradient(180deg,#f9fafc,#f1f2f5)] shadow-[0_26px_44px_rgba(0,47,167,0.08)] [backface-visibility:hidden]"
+                      className="absolute inset-0 rounded-md border border-[rgba(0,47,167,0.08)] bg-[linear-gradient(180deg,#f9fafc,#f1f2f5)] shadow-[0_26px_44px_rgba(0,47,167,0.08)] backface-hidden"
                       style={{ transform: 'rotateY(180deg)' }}
                     >
                       {/* Back of the page */}
-                      <div className="absolute inset-y-0 left-[50px] w-px bg-[rgba(0,47,167,0.05)]" />
+                      <div className="absolute inset-y-0 left-12.5 w-px bg-[rgba(0,47,167,0.05)]" />
                       <div className="flex h-full flex-col justify-between px-12 py-10 text-neutral-400">
                         {page.type === 'cover' ? (
                             <div className="flex flex-col h-full justify-center items-center">

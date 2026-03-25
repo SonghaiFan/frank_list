@@ -228,7 +228,7 @@ export const getGroupPages = (
   const naturalPageCount = Math.max(1, Math.ceil(group.items.length / PAGE_SIZE));
   const pageCount = Math.max(1, naturalPageCount + extraPageCount);
 
-  return Array.from({ length: pageCount }, (_, pageIndex) => {
+  const pages = Array.from({ length: pageCount }, (_, pageIndex) => {
     const items = group.items.slice(pageIndex * PAGE_SIZE, (pageIndex + 1) * PAGE_SIZE);
     const key = getPageKey(group.id, pageIndex);
     const isComplete = items.length > 0 && items.every((item) => !!ticks[item.id]);
@@ -243,6 +243,25 @@ export const getGroupPages = (
       isBound: isComplete && !!boundPages[key],
     };
   });
+
+  // If the last page is bound, we automatically add a new empty page
+  // so the user always has a place to work.
+  const lastPage = pages[pages.length - 1];
+  if (lastPage.isBound) {
+    const newPageIndex = pages.length;
+    const newKey = getPageKey(group.id, newPageIndex);
+    pages.push({
+      key: newKey,
+      groupId: group.id,
+      groupTitle: group.title,
+      pageIndex: newPageIndex,
+      items: [],
+      isComplete: false,
+      isBound: false,
+    });
+  }
+
+  return pages;
 };
 
 export const compressLocalGroup = (group: Group, ticks: Record<string, boolean>): CompactLocalGroup => {

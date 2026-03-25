@@ -24,11 +24,8 @@ export const CardEnd = forwardRef<HTMLDivElement, CardEndProps>(({
       layoutId="notebook-end"
       transition={{ type: 'spring', stiffness: 260, damping: 30 }}
     >
-      <div className="absolute inset-0 opacity-10 pointer-events-none bg-gradient-to-bl from-transparent to-black/5" />
+      <div className="absolute inset-0 opacity-10 pointer-events-none bg-linear-to-bl from-transparent to-black/5" />
       <div className="relative z-10 px-12 opacity-40">
-        <div className="w-16 h-16 rounded-full border-2 border-dashed border-neutral-300 mx-auto mb-4 flex items-center justify-center">
-          <div className="w-2 h-2 bg-neutral-300 rounded-full" />
-        </div>
         <p className="text-neutral-400 font-mono text-xs uppercase tracking-widest">
           End of List
         </p>

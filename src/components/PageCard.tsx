@@ -30,11 +30,9 @@ export function PageCard({
   mode = 'edit',
   newItemText = '',
   page,
-  pageSize,
   showAddItemInput = false,
   ticks = {},
   onAddItem,
-  onBindPage,
   onItemTextChange,
   onRemoveItem,
   onToggleTick,
@@ -54,15 +52,15 @@ export function PageCard({
       transition={{ type: 'spring', stiffness: 260, damping: 30 }}
     >
       <div className="paper-lines">
-        <div className="paper-content flex h-full flex-col !p-0">
+        <div className="paper-content flex h-full flex-col p-0!">
           {/* Header: Exact 2 lines height (72px). Padding aligns text baseline to the 2nd line. */}
-          <div className="mx-auto flex h-[72px] w-full max-w-[550px] items-end justify-between gap-4 border-b border-[rgba(0,47,167,0.1)] pl-[70px] pr-8 pb-[6px]">
+          <div className="mx-auto flex h-18 w-full max-w-135 items-end justify-between gap-4 border-b border-[rgba(0,47,167,0.1)] pl-15 pr-8 pb-2">
             <motion.div layout className="flex-1">
               <div className="list-text text-xl font-medium tracking-tight text-neutral-800 leading-none">
                 {page.groupTitle}
               </div>
             </motion.div>
-            <div className="flex items-center gap-3 mb-[1px]">
+            <div className="flex items-center gap-3 mb-px">
                {page.isBound ? (
                 <motion.span className="text-klein font-medium text-xs tracking-wide opacity-60" layout>
                   已归档
@@ -100,7 +98,7 @@ export function PageCard({
                     disabled={!interactive}
                     onChange={(e) => onToggleTick?.(item.id, e)}
                     className={cn(
-                      'rams-checkbox absolute left-[-60px]',
+                      'rams-checkbox absolute -left-15',
                       !interactive && 'cursor-default pointer-events-none'
                     )}
                   />
@@ -126,7 +124,7 @@ export function PageCard({
                       />
                     )}
                   </div>
-                  {interactive && mode === 'edit' && (
+                  {interactive && mode === 'edit' && item.origin.type !== 'default' && (
                     <button
                       onClick={() => onRemoveItem?.(item.id)}
                       className="opacity-0 group-hover:opacity-100 p-1 text-neutral-300 hover:text-klein transition-all ml-auto relative z-10"
@@ -153,8 +151,8 @@ export function PageCard({
           )}
           </div>
           
-          <div className="mt-auto h-[36px] px-8 flex items-center justify-end opacity-40">
-            <span className="ui-mono text-[10px] tracking-[0.2em] text-neutral-400 font-medium translate-y-[1px]">
+          <div className="mt-auto h-9 px-8 flex items-center justify-end opacity-40">
+            <span className="ui-mono text-[10px] tracking-[0.2em] text-neutral-400 font-medium translate-y-px">
               {String(page.pageIndex + 1).padStart(2, '0')}
             </span>
           </div>

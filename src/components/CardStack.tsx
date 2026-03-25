@@ -8,8 +8,6 @@ import { PageCard } from './PageCard';
 
 interface CardStackProps {
   className?: string;
-  emptyMessage: string;
-  emptySubtext: string;
   interactive?: boolean;
   allowAddItemInput?: boolean;
   mode?: AppMode;
@@ -27,8 +25,6 @@ interface CardStackProps {
 
 export function CardStack({
   className,
-  emptyMessage,
-  emptySubtext,
   interactive = true,
   allowAddItemInput = true,
   mode = 'edit',
@@ -88,25 +84,6 @@ export function CardStack({
     return 'translate-x-0 translate-y-10 scale-[0.82] opacity-0 pointer-events-none';
   };
 
-  if (pages.length === 0) {
-    return (
-      <div 
-        className={cn('relative flex items-start justify-center overflow-visible px-6 pb-8 pt-2 max-md:px-0', className)}
-        style={{ minHeight: `${PAGE_CARD_HEIGHT_PX + 88}px` }}
-      >
-        <div
-          className="relative z-[2] flex items-center justify-center rounded-[6px] border border-dashed border-neutral-200 bg-white/55 px-6 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]"
-          style={{ width: `${PAGE_CARD_WIDTH_PX}px`, minHeight: `${PAGE_CARD_HEIGHT_PX}px` }}
-        >
-          <div>
-            <div className="list-text text-neutral-500">{emptyMessage}</div>
-            <div className="ui-mono mt-2 opacity-45">{emptySubtext}</div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div 
       className={cn('relative flex items-start justify-center overflow-visible px-6 pb-8 pt-2 max-md:px-0', className)}
@@ -116,7 +93,7 @@ export function CardStack({
         <button
           type="button"
           onClick={onAppendPage}
-          className="absolute right-0 z-20 flex h-12 min-w-12 items-center justify-center gap-1 rounded-full border-none bg-white/92 px-4 text-gray-900/85 shadow-[0_12px_26px_rgba(0,0,0,0.1)] transition-all hover:-translate-y-px hover:bg-white max-md:bottom-[18px] max-md:right-[calc(50%-58px)] max-md:top-auto"
+          className="absolute right-0 z-20 flex h-12 min-w-12 items-center justify-center gap-1 rounded-full border-none bg-white/92 px-4 text-gray-900/85 shadow-[0_12px_26px_rgba(0,0,0,0.1)] transition-all hover:-translate-y-px hover:bg-white max-md:bottom-4.5 max-md:right-[calc(50%-58px)] max-md:top-auto"
           style={{ top: `${(PAGE_CARD_HEIGHT_PX / 2) - 24}px` }}
           title="Add new page"
         >

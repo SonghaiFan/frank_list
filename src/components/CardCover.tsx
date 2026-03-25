@@ -28,7 +28,7 @@ export const CardCover = forwardRef<HTMLDivElement, CardCoverProps>(({
       layoutId={layoutId}
       transition={{ type: 'spring', stiffness: 260, damping: 30 }}
     >
-      <div className="absolute inset-0 opacity-10 pointer-events-none bg-gradient-to-br from-black/5 to-transparent" />
+      <div className="absolute inset-0 opacity-10 pointer-events-none bg-linear-to-bl from-black/5 to-transparent" />
       <div className="relative z-10 px-12">
         <h1 className="text-4xl font-bold text-klein/90 mb-4 tracking-tight">{title}</h1>
         <p className="text-neutral-400 font-mono text-sm uppercase tracking-widest">

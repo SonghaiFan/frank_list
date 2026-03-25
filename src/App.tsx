@@ -335,9 +335,8 @@ export default function App() {
       const currentExtra = prev[activeGroupId] ?? 0;
       if (currentExtra === 0) return prev;
 
-      const nextNaturalPageCount = Math.max(1, Math.ceil((activeGroup.items.length - 1) / PAGE_SIZE));
-      const maxUsefulExtra = Math.max(0, activeGroupPages.length - nextNaturalPageCount);
-      const nextExtra = Math.min(currentExtra, maxUsefulExtra);
+      // Prune extra page capability as content shrinks to avoid "zombie" empty pages
+      const nextExtra = Math.max(0, currentExtra - 1);
       if (nextExtra === currentExtra) return prev;
 
       const next = { ...prev };
@@ -481,9 +480,6 @@ export default function App() {
                     <GroupWorkspace
                       activeGroup={activeGroup}
                       activeGroupPages={stackPages}
-                      boundPageCount={lowerStackPages.length}
-                      editingGroupId={editingGroupId}
-                      groupTitleDraft={groupTitleDraft}
                       mode={mode}
                       newItemText={newItemText}
                       pageSize={PAGE_SIZE}
@@ -492,13 +488,8 @@ export default function App() {
                       onAddItem={addItem}
                       onAppendPage={appendEmptyPage}
                       onBindPage={movePageToLowerStack}
-                      onDeleteGroup={() => setShowDeleteGroupConfirm(true)}
-                      onDraftChange={setGroupTitleDraft}
                       onItemTextChange={setNewItemText}
                       onRemoveItem={removeItem}
-                      onRenameCancel={cancelRenameGroup}
-                      onRenameSave={saveGroupTitle}
-                      onRenameStart={startRenameGroup}
                       onToggleTick={toggleTick}
                     />
                   </motion.div>
