@@ -1,17 +1,14 @@
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import type React from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useAppDataStore } from '@/stores/app-data-store';
 import { useUIStore } from '@/stores/ui-store';
 import { useI18n } from '@/hooks/useI18n';
+import { useAppLifecycle } from '@/hooks/useAppLifecycle';
 import {
-  clearPersistedAppState,
   clearShareQueryFromUrl,
   createGroupShareUrl,
-  loadAppState,
-  persistAppState,
 } from '@/lib/app-state-storage';
-import { createDefaultState } from '@/lib/notebook-utils';
 import {
   getActiveGroupOrFallback,
   getComparisonBuckets,
@@ -22,132 +19,104 @@ import { DEFAULT_GROUP_ID } from '@/lib/workspace-constants';
 
 export const useAppViewModel = () => {
   const { t } = useI18n();
-  const appData = useAppDataStore(useShallow((state) => ({
-    addItem: state.addItem,
-    appendEmptyPage: state.appendEmptyPage,
-    bindPage: state.bindPage,
+  const appState = useAppDataStore(useShallow((state) => ({
     boundPages: state.boundPages,
-    clearSharedTicks: state.clearSharedTicks,
-    createGroup: state.createGroup,
-    deleteGroup: state.deleteGroup,
     extraPageCounts: state.extraPageCounts,
     groups: state.groups,
-    hydrateData: state.hydrateData,
     isHydrated: state.isHydrated,
     myId: state.myId,
     myTicks: state.myTicks,
     nextGroupId: state.nextGroupId,
     nextItemId: state.nextItemId,
+    sharedTicks: state.sharedTicks,
+  })));
+
+  const appActions = useAppDataStore(useShallow((state) => ({
+    addItem: state.addItem,
+    appendEmptyPage: state.appendEmptyPage,
+    bindPage: state.bindPage,
+    clearSharedTicks: state.clearSharedTicks,
+    createGroup: state.createGroup,
+    deleteGroup: state.deleteGroup,
+    hydrateData: state.hydrateData,
     pruneBoundPages: state.pruneBoundPages,
     removeItem: state.removeItem,
     resetData: state.resetData,
-    sharedTicks: state.sharedTicks,
     toggleTick: state.toggleTick,
   })));
 
-  const ui = useUIStore(useShallow((state) => ({
+  const uiState = useUIStore(useShallow((state) => ({
     activeGroupId: state.activeGroupId,
-    backToWorkspace: state.backToWorkspace,
-    closeOverlay: state.closeOverlay,
-    closeToGallery: state.closeToGallery,
     copySuccess: state.copySuccess,
     flow: state.flow,
-    hydrate: state.hydrate,
     locale: state.locale,
     newItemText: state.newItemText,
-    openGroupFromGallery: state.openGroupFromGallery,
     overlay: state.overlay,
-    selectGroup: state.selectGroup,
+  })));
+
+  const uiActions = useUIStore(useShallow((state) => ({
+    backToWorkspace: state.backToWorkspace,
+    closeOverlay: state.closeOverlay,
     setCopySuccess: state.setCopySuccess,
     setNewItemText: state.setNewItemText,
+    hydrate: state.hydrate,
+    openGroupFromGallery: state.openGroupFromGallery,
+    selectGroup: state.selectGroup,
     showQrCode: state.showQrCode,
     showResetConfirm: state.showResetConfirm,
     startComparison: state.startComparison,
     togglePrimaryView: state.togglePrimaryView,
   })));
 
-  const isWorkspaceFlow = ui.flow === 'workspace' || ui.flow === 'compare-review';
-  const isCompareReviewFlow = ui.flow === 'compare-review';
-  const isCompareResultFlow = ui.flow === 'compare-result';
-  const isEditingFlow = ui.flow === 'workspace' || ui.flow === 'gallery';
+  const isWorkspaceFlow = uiState.flow === 'workspace' || uiState.flow === 'compare-review';
+  const isCompareReviewFlow = uiState.flow === 'compare-review';
+  const isCompareResultFlow = uiState.flow === 'compare-result';
+  const isEditingFlow = uiState.flow === 'workspace' || uiState.flow === 'gallery';
 
   const activeGroup = useMemo(
-    () => getActiveGroupOrFallback(appData.groups, ui.activeGroupId),
-    [appData.groups, ui.activeGroupId]
+    () => getActiveGroupOrFallback(appState.groups, uiState.activeGroupId),
+    [appState.groups, uiState.activeGroupId]
   );
 
   const { lowerStackPages, stackPages } = useMemo(
     () => getPageCollections(
       activeGroup,
-      appData.myTicks,
-      appData.boundPages,
-      appData.extraPageCounts[activeGroup.id] ?? 0
+      appState.myTicks,
+      appState.boundPages,
+      appState.extraPageCounts[activeGroup.id] ?? 0
     ),
-    [activeGroup, appData.myTicks, appData.boundPages, appData.extraPageCounts]
+    [activeGroup, appState.myTicks, appState.boundPages, appState.extraPageCounts]
   );
 
   const galleryGroups = useMemo(
-    () => appData.groups.map((group) => ({
+    () => appState.groups.map((group) => ({
       group,
       pages: getPageCollections(
         group,
-        appData.myTicks,
-        appData.boundPages,
-        appData.extraPageCounts[group.id] ?? 0
+        appState.myTicks,
+        appState.boundPages,
+        appState.extraPageCounts[group.id] ?? 0
       ).activeGroupPages,
     })),
-    [appData.groups, appData.myTicks, appData.boundPages, appData.extraPageCounts]
+    [appState.groups, appState.myTicks, appState.boundPages, appState.extraPageCounts]
   );
 
   const comparison = useMemo(
-    () => (isCompareResultFlow ? getComparisonBuckets(activeGroup.items, appData.myTicks, appData.sharedTicks) : null),
-    [activeGroup.items, appData.myTicks, appData.sharedTicks, isCompareResultFlow]
+    () => (isCompareResultFlow ? getComparisonBuckets(activeGroup.items, appState.myTicks, appState.sharedTicks) : null),
+    [activeGroup.items, appState.myTicks, appState.sharedTicks, isCompareResultFlow]
   );
 
-  useEffect(() => {
-    const initialize = async () => {
-      const loaded = await loadAppState();
-      appData.hydrateData(loaded);
-      ui.hydrate({ activeGroupId: loaded.persistedState.activeGroupId, flow: loaded.initialFlow });
-    };
+  const { resetToDefaultState } = useAppLifecycle({
+    activeGroupId: uiState.activeGroupId,
+    hydrateAppData: appActions.hydrateData,
+    hydrateUI: uiActions.hydrate,
+    locale: uiState.locale,
+    pruneBoundPages: appActions.pruneBoundPages,
+    state: appState,
+  });
 
-    initialize();
-  }, [appData, ui]);
-
-  useEffect(() => {
-    if (!appData.isHydrated || !appData.myId) return;
-
-    const persist = async () => {
-      await persistAppState({
-        groups: appData.groups,
-        ticks: appData.myTicks,
-        boundPages: appData.boundPages,
-        extraPageCounts: appData.extraPageCounts,
-        activeGroupId: ui.activeGroupId,
-        nextGroupId: appData.nextGroupId,
-        nextItemId: appData.nextItemId,
-      }, appData.myId);
-    };
-
-    persist();
-  }, [
-    appData.boundPages,
-    appData.extraPageCounts,
-    appData.groups,
-    appData.isHydrated,
-    appData.myId,
-    appData.myTicks,
-    appData.nextGroupId,
-    appData.nextItemId,
-    ui.activeGroupId,
-  ]);
-
-  useEffect(() => {
-    appData.pruneBoundPages();
-  }, [appData.groups, appData.myTicks, appData.pruneBoundPages]);
-
-  const toggleTick = (itemId: string, e?: React.MouseEvent | React.ChangeEvent) => {
-    const { pageKeyToBind } = appData.toggleTick({ activeGroupId: ui.activeGroupId, itemId });
+  const toggleTick = (itemId: string, _event?: React.MouseEvent | React.ChangeEvent) => {
+    const { pageKeyToBind } = appActions.toggleTick({ activeGroupId: uiState.activeGroupId, itemId });
 
     if (pageKeyToBind) {
       window.setTimeout(() => {
@@ -157,39 +126,39 @@ export const useAppViewModel = () => {
   };
 
   const selectGroup = (groupId: string) => {
-    ui.selectGroup(groupId);
-    appData.clearSharedTicks();
+    uiActions.selectGroup(groupId);
+    appActions.clearSharedTicks();
     clearShareQueryFromUrl();
   };
 
   const createGroup = () => {
-    const newGroup = appData.createGroup(getGeneratedGroupTitle(appData.groups.length + 1, ui.locale));
+    const newGroup = appActions.createGroup(getGeneratedGroupTitle(appState.groups.length + 1, uiState.locale));
     selectGroup(newGroup.id);
   };
 
   const addItem = () => {
-    appData.addItem({ activeGroupId: ui.activeGroupId, text: ui.newItemText });
-    ui.setNewItemText('');
+    appActions.addItem({ activeGroupId: uiState.activeGroupId, text: uiState.newItemText });
+    uiActions.setNewItemText('');
   };
 
   const appendEmptyPage = () => {
-    appData.appendEmptyPage(ui.activeGroupId);
+    appActions.appendEmptyPage(uiState.activeGroupId);
   };
 
   const movePageToLowerStack = (pageKey: string) => {
-    appData.bindPage(pageKey);
+    appActions.bindPage(pageKey);
   };
 
   const removeItem = (itemId: string) => {
-    appData.removeItem({ activeGroupId: ui.activeGroupId, itemId });
+    appActions.removeItem({ activeGroupId: uiState.activeGroupId, itemId });
   };
 
-  const generateShareUrl = () => createGroupShareUrl(activeGroup, appData.myTicks, appData.myId);
+  const generateShareUrl = () => createGroupShareUrl(activeGroup, appState.myTicks, appState.myId);
 
   const copyToClipboard = async () => {
     try {
       await navigator.clipboard.writeText(generateShareUrl());
-      ui.setCopySuccess(true);
+      uiActions.setCopySuccess(true);
       window.setTimeout(() => useUIStore.getState().clearCopySuccess(), 2000);
     } catch (error) {
       console.error('Failed to copy!', error);
@@ -198,31 +167,30 @@ export const useAppViewModel = () => {
 
   const backToEdit = () => {
     clearShareQueryFromUrl();
-    ui.backToWorkspace();
-    appData.clearSharedTicks();
+    uiActions.backToWorkspace();
+    appActions.clearSharedTicks();
   };
 
   const deleteActiveGroup = () => {
     if (activeGroup.id === DEFAULT_GROUP_ID) return;
 
-    const fallbackGroupId = appData.deleteGroup(activeGroup.id);
+    const fallbackGroupId = appActions.deleteGroup(activeGroup.id);
     if (fallbackGroupId) {
-      ui.selectGroup(fallbackGroupId);
+      uiActions.selectGroup(fallbackGroupId);
     }
-    ui.backToWorkspace();
-    ui.closeOverlay();
-    ui.setNewItemText('');
+    uiActions.backToWorkspace();
+    uiActions.closeOverlay();
+    uiActions.setNewItemText('');
     clearShareQueryFromUrl();
   };
 
   const resetAll = () => {
-    const next = createDefaultState(ui.locale);
+    const next = resetToDefaultState();
     clearShareQueryFromUrl();
-    clearPersistedAppState();
-    appData.resetData(next);
-    ui.hydrate({ activeGroupId: next.activeGroupId, flow: 'workspace' });
-    ui.closeOverlay();
-    ui.setNewItemText('');
+    appActions.resetData(next);
+    uiActions.hydrate({ activeGroupId: next.activeGroupId, flow: 'workspace' });
+    uiActions.closeOverlay();
+    uiActions.setNewItemText('');
   };
 
   return {
@@ -230,13 +198,13 @@ export const useAppViewModel = () => {
     addItem,
     appendEmptyPage,
     backToEdit,
-    closeOverlay: ui.closeOverlay,
+    closeOverlay: uiActions.closeOverlay,
     comparison,
-    copySuccess: ui.copySuccess,
+    copySuccess: uiState.copySuccess,
     copyToClipboard,
     createGroup,
     deleteActiveGroup,
-    flow: ui.flow,
+    flow: uiState.flow,
     galleryGroups,
     generateShareUrl,
     isCompareResultFlow,
@@ -260,18 +228,18 @@ export const useAppViewModel = () => {
     },
     lowerStackPages,
     movePageToLowerStack,
-    newItemText: ui.newItemText,
-    onItemTextChange: ui.setNewItemText,
-    onOpenGroupFromGallery: ui.openGroupFromGallery,
-    onResetRequest: ui.showResetConfirm,
-    onShowQrCode: ui.showQrCode,
-    onStartComparison: ui.startComparison,
-    onTogglePrimaryView: ui.togglePrimaryView,
-    overlay: ui.overlay,
+    newItemText: uiState.newItemText,
+    onItemTextChange: uiActions.setNewItemText,
+    onOpenGroupFromGallery: uiActions.openGroupFromGallery,
+    onResetRequest: uiActions.showResetConfirm,
+    onShowQrCode: uiActions.showQrCode,
+    onStartComparison: uiActions.startComparison,
+    onTogglePrimaryView: uiActions.togglePrimaryView,
+    overlay: uiState.overlay,
     removeItem,
     resetAll,
     stackPages,
-    ticks: appData.myTicks,
+    ticks: appState.myTicks,
     toggleTick,
   };
 };
