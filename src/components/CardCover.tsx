@@ -1,7 +1,7 @@
 import React, { forwardRef } from 'react';
 import { motion } from 'motion/react';
-import { cn } from '../lib/cn';
-import { PAGE_CARD_HEIGHT_PX, PAGE_CARD_WIDTH_PX } from '../lib/workspace-constants';
+import { cn } from '@/lib/cn';
+import { PAGE_CARD_HEIGHT_PX, PAGE_CARD_WIDTH_PX } from '@/lib/workspace-constants';
 
 interface CardCoverProps {
   className?: string;

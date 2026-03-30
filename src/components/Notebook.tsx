@@ -1,18 +1,19 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { motion } from 'motion/react';
-import { cn } from '../lib/cn';
-import type { GroupPage } from '../lib/notebook-types';
-import { PAGE_CARD_HEIGHT_PX, PAGE_CARD_WIDTH_PX, PAGE_ITEM_CAPACITY, PAGE_LINE_HEIGHT_PX } from '../lib/workspace-constants';
-import { PageCard } from './PageCard';
-import { CardCover } from './CardCover';
-import { CardEnd } from './CardEnd';
+import { cn } from '@/lib/cn';
+import type { GroupPage } from '@/lib/notebook-types';
+import { PAGE_CARD_HEIGHT_PX, PAGE_CARD_WIDTH_PX, PAGE_ITEM_CAPACITY, PAGE_LINE_HEIGHT_PX } from '@/lib/workspace-constants';
+import { PageCard } from '@/components/PageCard';
+import { CardCover } from '@/components/CardCover';
+import { CardEnd } from '@/components/CardEnd';
 
 interface NotebookProps {
   id?: string;
   className?: string;
   closed?: boolean;
   coverTitle?: string;
+  style?: React.CSSProperties;
   onOpen?: () => void;
   pages: GroupPage[];
   ticks: Record<string, boolean>;
@@ -48,6 +49,7 @@ export function Notebook({
   className,
   closed = false,
   coverTitle,
+  style,
   onOpen,
   pages,
   ticks,
@@ -157,7 +159,7 @@ export function Notebook({
         'relative flex w-full items-start justify-center perspective-[2000px] mt-10',
         className
       )}
-      style={{ minHeight: `${PAGE_CARD_HEIGHT_PX + 88}px` }}
+      style={{ minHeight: `${PAGE_CARD_HEIGHT_PX + 88}px`, ...style }}
       initial={{ opacity: 0, scale: 0.9, y: -200 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.9, y: -200 }}
@@ -319,7 +321,6 @@ export function Notebook({
                       ) : (
                         <PageCard
                           page={page}
-                          pageSize={PAGE_ITEM_CAPACITY}
                           interactive={isCurrent}
                           isActive={isCurrent}
                           className={shadowClass}

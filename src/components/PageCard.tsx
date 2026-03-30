@@ -1,10 +1,10 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { Plus, X } from 'lucide-react';
-import type { AppMode, GroupPage } from '../lib/notebook-types';
-import { cn } from '../lib/cn';
-import { getMarkerStyle, getOriginDotClassName, getOriginLabel } from '../lib/notebook-ui';
-import { PAGE_CARD_HEIGHT_PX, PAGE_CARD_WIDTH_PX } from '../lib/workspace-constants';
+import type { AppMode, GroupPage } from '@/lib/notebook-types';
+import { cn } from '@/lib/cn';
+import { getMarkerStyle, getOriginDotClassName, getOriginLabel } from '@/lib/notebook-ui';
+import { PAGE_CARD_HEIGHT_PX, PAGE_CARD_WIDTH_PX } from '@/lib/workspace-constants';
 
 interface PageCardProps {
   className?: string;
@@ -13,11 +13,9 @@ interface PageCardProps {
   mode?: AppMode;
   newItemText?: string;
   page: GroupPage;
-  pageSize: number;
   showAddItemInput?: boolean;
   ticks?: Record<string, boolean>;
   onAddItem?: () => void;
-  onBindPage?: (pageKey: string) => void;
   onItemTextChange?: (value: string) => void;
   onRemoveItem?: (itemId: string) => void;
   onToggleTick?: (itemId: string, e?: React.MouseEvent | React.ChangeEvent) => void;
@@ -42,73 +40,64 @@ export function PageCard({
   return (
     <motion.div
       ref={cardRef}
-      className={cn(
-        'hybrid-paper mx-auto',
-        className
-      )}
+      className={cn('hybrid-paper paper-lines mx-auto', className)}
       style={{ width: `${PAGE_CARD_WIDTH_PX}px`, height: `${PAGE_CARD_HEIGHT_PX}px` }}
       layout
       layoutId={`page-card-${page.key}`}
       transition={{ type: 'spring', stiffness: 260, damping: 30 }}
     >
-      <div className="paper-lines">
-        <div className="paper-content flex h-full flex-col p-0!">
-          {/* Header: Exact 2 lines height (72px). Padding aligns text baseline to the 2nd line. */}
-          <div className="mx-auto flex h-18 w-full max-w-135 items-end justify-between gap-4 border-b border-[rgba(0,47,167,0.1)] pl-15 pr-8 pb-2">
-            <motion.div layout className="flex-1">
-              <div className="list-text text-xl font-medium tracking-tight text-neutral-800 leading-none">
-                {page.groupTitle}
-              </div>
-            </motion.div>
-            <div className="flex items-center gap-3 mb-px">
-               {page.isBound ? (
-                <motion.span className="text-klein font-medium text-xs tracking-wide opacity-60" layout>
-                  已归档
-                </motion.span>
-              ) : page.isComplete ? (
-                <motion.span
-                  className="text-klein font-medium text-xs tracking-wide"
-                  layout
-                >
-                  已完成
-                </motion.span>
-              ) : (
-                <span className="text-neutral-300 font-medium text-xs tracking-wide">
-                  待完成
-                </span>
-              )}
+      <div className="paper-content flex h-full flex-col p-0!">
+        <motion.div
+          layout="position"
+          className="mx-auto flex h-18 w-full max-w-135 items-end justify-between gap-4 border-b border-[rgba(0,47,167,0.1)] pl-15 pr-8 pb-2"
+        >
+          <div className="min-w-0 flex-1">
+            <div className="list-text text-xl leading-none font-medium tracking-tight text-neutral-800">
+              {page.groupTitle}
             </div>
           </div>
+          <div className="mb-px flex items-center gap-3">
+            {page.isBound ? (
+              <motion.span className="text-klein text-xs font-medium tracking-wide opacity-60" layout="position">
+                已归档
+              </motion.span>
+            ) : page.isComplete ? (
+              <motion.span className="text-klein text-xs font-medium tracking-wide" layout="position">
+                已完成
+              </motion.span>
+            ) : (
+              <span className="text-xs font-medium tracking-wide text-neutral-300">
+                待完成
+              </span>
+            )}
+          </div>
+        </motion.div>
 
-          <div className="flex-1 pl-18 pt-0">
-            <motion.ul
-              className={cn(
-                'space-y-0',
-                !isActive && 'pointer-events-none'
-              )}
-            >
-              {page.items.map((item) => (
-                <motion.li
-                  key={item.id}
-                  className="group relative flex items-center gap-2"
-                >
+        <div className="flex-1 pl-18 pt-0">
+          <motion.ul className={cn('space-y-0', !isActive && 'pointer-events-none')}>
+            {page.items.map((item) => {
+              const checkboxId = `page-card-${page.key}-${item.id}`;
+
+              return (
+                <li key={item.id} className="group relative flex items-center gap-2">
                   <input
+                    id={checkboxId}
                     type="checkbox"
                     checked={!!ticks[item.id]}
                     disabled={!interactive}
                     onChange={(e) => onToggleTick?.(item.id, e)}
                     className={cn(
                       'rams-checkbox absolute -left-15',
-                      !interactive && 'cursor-default pointer-events-none'
+                      !interactive && 'pointer-events-none cursor-default'
                     )}
                   />
-                  <div
+                  <label
+                    htmlFor={interactive ? checkboxId : undefined}
                     className={cn('flex flex-1 items-center gap-2', interactive && 'cursor-pointer')}
-                    onClick={interactive ? (e) => onToggleTick?.(item.id, e) : undefined}
                   >
                     <span
                       className={cn(
-                        'list-text on-lines select-none marker-text',
+                        'list-text on-lines marker-text select-none',
                         ticks[item.id] && 'is-highlighted'
                       )}
                       style={getMarkerStyle(item.text)}
@@ -118,23 +107,25 @@ export function PageCard({
                       <span className="marker-label">{item.text}</span>
                     </span>
                     {item.origin.type !== 'default' && (
-                      <div
-                        className={cn('w-1.5 h-1.5 rounded-full shrink-0', getOriginDotClassName(item.origin))}
+                      <span
+                        className={cn('h-1.5 w-1.5 shrink-0 rounded-full', getOriginDotClassName(item.origin))}
                         title={getOriginLabel(item.origin)}
                       />
                     )}
-                  </div>
+                  </label>
                   {interactive && mode === 'edit' && item.origin.type !== 'default' && (
                     <button
+                      type="button"
                       onClick={() => onRemoveItem?.(item.id)}
-                      className="opacity-0 group-hover:opacity-100 p-1 text-neutral-300 hover:text-klein transition-all ml-auto relative z-10"
+                      className="relative z-10 ml-auto p-1 text-neutral-300 opacity-0 transition-all group-hover:opacity-100 hover:text-klein"
                     >
                       <X size={16} />
                     </button>
                   )}
-                </motion.li>
-              ))}
-            </motion.ul>
+                </li>
+              );
+            })}
+          </motion.ul>
 
           {interactive && showAddItemInput && (
             <div className="input-row on-lines">
@@ -145,17 +136,16 @@ export function PageCard({
                 onChange={(e) => onItemTextChange?.(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && onAddItem?.()}
                 placeholder={`给「${page.groupTitle}」添加新项目...`}
-                className="flex-1 bg-transparent border-none outline-none list-text on-lines placeholder:text-neutral-200 h-full"
+                className="list-text on-lines h-full flex-1 border-none bg-transparent outline-none placeholder:text-neutral-200"
               />
             </div>
           )}
-          </div>
-          
-          <div className="mt-auto h-9 px-8 flex items-center justify-end opacity-40">
-            <span className="ui-mono text-[10px] tracking-[0.2em] text-neutral-400 font-medium translate-y-px">
-              {String(page.pageIndex + 1).padStart(2, '0')}
-            </span>
-          </div>
+        </div>
+
+        <div className="mt-auto flex h-9 items-center justify-end px-8 opacity-40">
+          <span className="ui-mono translate-y-px text-[10px] font-medium tracking-[0.2em] text-neutral-400">
+            {String(page.pageIndex + 1).padStart(2, '0')}
+          </span>
         </div>
       </div>
     </motion.div>

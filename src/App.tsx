@@ -1,61 +1,109 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence, LayoutGroup } from 'motion/react';
 import { Users } from 'lucide-react';
 import { QRCodeCanvas } from 'qrcode.react';
-import { AppHeader } from './components/AppHeader';
-import { ComparisonPanel } from './components/ComparisonPanel';
-import { GroupWorkspace } from './components/GroupWorkspace';
-import { Notebook } from './components/Notebook';
-import { ModalDialog } from './components/ModalDialog';
-import type { AppMode, Group, ListItem } from './lib/notebook-types';
+import { AppHeader } from '@/components/AppHeader';
+import { ComparisonPanel } from '@/components/ComparisonPanel';
+import { GroupWorkspace } from '@/components/GroupWorkspace';
+import { Notebook } from '@/components/Notebook';
+import { ModalDialog } from '@/components/ModalDialog';
+import type { ListItem } from '@/lib/notebook-types';
+import {
+  clearPersistedAppState,
+  createGroupShareUrl,
+  loadAppState,
+  persistAppState,
+} from '@/lib/app-state-storage';
 import {
   DEFAULT_GROUP_ID,
-  LOCAL_STATE_STORAGE_KEY,
   PAGE_CARD_HEIGHT_PX,
   PAGE_CARD_WIDTH_PX,
   PAGE_SIZE,
-} from './lib/workspace-constants';
+} from '@/lib/workspace-constants';
 import {
   createDefaultGroup,
   createDefaultState,
-  createOwnedId,
-  decryptState,
-  encryptState,
-  generateShareKey,
   getGroupPages,
-  getPageKey,
-  mergeImportedGroup,
-  normalizeState,
-  parseSharedPayload,
-  randomId,
-} from './lib/notebook-utils';
+} from '@/lib/notebook-utils';
+import { useShallow } from 'zustand/react/shallow';
+import { useAppDataStore } from '@/stores/app-data-store';
+import { useUIStore } from '@/stores/ui-store';
 
 interface ConfettiHandle {
   spawn: (x: number, y: number) => void;
 }
 
 export default function App() {
-  const [myId, setMyId] = useState<string>('local');
-  const [groups, setGroups] = useState<Group[]>([createDefaultGroup()]);
-  const [activeGroupId, setActiveGroupId] = useState<string>(DEFAULT_GROUP_ID);
-  const [myTicks, setMyTicks] = useState<Record<string, boolean>>({});
-  const [boundPages, setBoundPages] = useState<Record<string, boolean>>({});
-  const [extraPageCounts, setExtraPageCounts] = useState<Record<string, number>>({});
-  const [nextGroupId, setNextGroupId] = useState(1);
-  const [nextItemId, setNextItemId] = useState(0);
-  const [sharedTicks, setSharedTicks] = useState<Record<string, boolean>>({});
-  const [mode, setMode] = useState<AppMode>('edit');
-  const [isGalleryClosed, setIsGalleryClosed] = useState(false);
-  const [copySuccess, setCopySuccess] = useState(false);
-  const [showQrCode, setShowQrCode] = useState(false);
-  const [showResetConfirm, setShowResetConfirm] = useState(false);
-  const [showDeleteGroupConfirm, setShowDeleteGroupConfirm] = useState(false);
-  const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
-  const [groupTitleDraft, setGroupTitleDraft] = useState('');
-  const [newItemText, setNewItemText] = useState('');
-  const [isHydrated, setIsHydrated] = useState(false);
   const confettiRef = useRef<ConfettiHandle | null>(null);
   const paperRef = useRef<HTMLDivElement>(null);
+  const {
+    addItem: addItemToData,
+    appendEmptyPage: appendEmptyPageInData,
+    bindPage,
+    boundPages,
+    clearSharedTicks,
+    createGroup: createGroupInData,
+    deleteGroup: deleteGroupFromData,
+    extraPageCounts,
+    groups,
+    hydrateData,
+    isHydrated,
+    myId,
+    myTicks,
+    nextGroupId,
+    nextItemId,
+    pruneBoundPages,
+    removeItem: removeItemInData,
+    resetData,
+    sharedTicks,
+    toggleTick: toggleTickInStore,
+  } = useAppDataStore(useShallow((state) => ({
+    addItem: state.addItem,
+    appendEmptyPage: state.appendEmptyPage,
+    bindPage: state.bindPage,
+    boundPages: state.boundPages,
+    clearSharedTicks: state.clearSharedTicks,
+    createGroup: state.createGroup,
+    deleteGroup: state.deleteGroup,
+    extraPageCounts: state.extraPageCounts,
+    groups: state.groups,
+    hydrateData: state.hydrateData,
+    isHydrated: state.isHydrated,
+    myId: state.myId,
+    myTicks: state.myTicks,
+    nextGroupId: state.nextGroupId,
+    nextItemId: state.nextItemId,
+    pruneBoundPages: state.pruneBoundPages,
+    removeItem: state.removeItem,
+    resetData: state.resetData,
+    sharedTicks: state.sharedTicks,
+    toggleTick: state.toggleTick,
+  })));
+  const {
+    activeGroupId,
+    backToWorkspace,
+    closeOverlay,
+    closeToGallery,
+    copySuccess,
+    flow,
+    hydrate: hydrateUI,
+    newItemText,
+    openGroupFromGallery,
+    overlay,
+    selectGroup: selectGroupInUI,
+    setCopySuccess,
+    setNewItemText,
+    showQrCode,
+    showResetConfirm,
+    startComparison: enterComparisonResult,
+    togglePrimaryView,
+  } = useUIStore();
+
+  const isWorkspaceFlow = flow === 'workspace' || flow === 'compare-review';
+  const isGalleryFlow = flow === 'gallery';
+  const isCompareReviewFlow = flow === 'compare-review';
+  const isCompareResultFlow = flow === 'compare-result';
+  const isEditingFlow = flow === 'workspace' || flow === 'gallery';
 
   const activeGroup = useMemo(
     () => groups.find((group) => group.id === activeGroupId) ?? groups[0] ?? createDefaultGroup(),
@@ -76,53 +124,19 @@ export default function App() {
 
   useEffect(() => {
     const initialize = async () => {
-      let localId = localStorage.getItem('rams-user-id');
-      if (!localId || localId.length > 6) {
-        localId = randomId(4);
-        localStorage.setItem('rams-user-id', localId);
-      }
-      setMyId(localId);
-
-      let currentState = createDefaultState();
-      const savedState = localStorage.getItem(LOCAL_STATE_STORAGE_KEY);
-      if (savedState) {
-        const decrypted = await decryptState(savedState, localId);
-        if (decrypted) currentState = decrypted;
-      }
-
-      const params = new URLSearchParams(window.location.search);
-      const key = params.get('key');
-      if (key) {
-        const imported = parseSharedPayload(key);
-        if (imported) {
-          currentState = {
-            ...currentState,
-            groups: mergeImportedGroup(currentState.groups, imported.group),
-            activeGroupId: imported.group.id,
-          };
-          setSharedTicks(imported.sharedTicks);
-          setMode('compare-step-1');
-        }
-      }
-
-      setGroups(currentState.groups);
-      setActiveGroupId(currentState.activeGroupId);
-      setMyTicks(currentState.ticks);
-      setBoundPages(currentState.boundPages);
-      setExtraPageCounts(currentState.extraPageCounts);
-      setNextGroupId(currentState.nextGroupId);
-      setNextItemId(currentState.nextItemId);
-      setIsHydrated(true);
+      const loaded = await loadAppState();
+      hydrateData(loaded);
+      hydrateUI({ activeGroupId: loaded.persistedState.activeGroupId, flow: loaded.initialFlow });
     };
 
     initialize();
-  }, []);
+  }, [hydrateData, hydrateUI]);
 
   useEffect(() => {
     if (!isHydrated || !myId) return;
 
     const persist = async () => {
-      const payload = normalizeState({
+      await persistAppState({
         groups,
         ticks: myTicks,
         boundPages,
@@ -130,67 +144,23 @@ export default function App() {
         activeGroupId,
         nextGroupId,
         nextItemId,
-      });
-      const encrypted = await encryptState(payload, myId);
-      localStorage.setItem(LOCAL_STATE_STORAGE_KEY, encrypted);
+      }, myId);
     };
 
     persist();
   }, [activeGroupId, boundPages, extraPageCounts, groups, isHydrated, myId, myTicks, nextGroupId, nextItemId]);
 
   useEffect(() => {
-    setBoundPages((prev) => {
-      let changed = false;
-      const next = { ...prev };
-
-      Object.keys(prev).forEach((pageKey) => {
-        if (!prev[pageKey]) return;
-
-        const [groupId, pageIndexRaw] = pageKey.split(':');
-        const group = groups.find((entry) => entry.id === groupId);
-        const pageIndex = Number.parseInt(pageIndexRaw, 10);
-
-        if (!group || Number.isNaN(pageIndex)) {
-          delete next[pageKey];
-          changed = true;
-          return;
-        }
-
-        const items = group.items.slice(pageIndex * PAGE_SIZE, (pageIndex + 1) * PAGE_SIZE);
-        const isComplete = items.length === PAGE_SIZE && items.every((item) => !!myTicks[item.id]);
-
-        if (!isComplete) {
-          delete next[pageKey];
-          changed = true;
-        }
-      });
-
-      return changed ? next : prev;
-    });
-  }, [groups, myTicks]);
+    pruneBoundPages();
+  }, [groups, myTicks, pruneBoundPages]);
 
   const toggleTick = (itemId: string, e?: React.MouseEvent | React.ChangeEvent) => {
-    const isChecking = !myTicks[itemId];
-    setMyTicks((prev) => ({ ...prev, [itemId]: isChecking }));
+    const { isChecking, pageKeyToBind } = toggleTickInStore({ activeGroupId, itemId });
 
-    if (isChecking) {
-      const itemIndex = activeGroup.items.findIndex((item) => item.id === itemId);
-      if (itemIndex !== -1) {
-        const pageIndex = Math.floor(itemIndex / PAGE_SIZE);
-        const pageStart = pageIndex * PAGE_SIZE;
-        const pageItems = activeGroup.items.slice(pageStart, pageStart + PAGE_SIZE);
-        
-        const isPageComplete = pageItems.length === PAGE_SIZE && pageItems.every((item) => 
-          item.id === itemId ? true : !!myTicks[item.id]
-        );
-
-        if (isPageComplete) {
-          const pageKey = getPageKey(activeGroup.id, pageIndex);
-          setTimeout(() => {
-            setBoundPages((prev) => ({ ...prev, [pageKey]: true }));
-          }, 800);
-        }
-      }
+    if (pageKeyToBind) {
+      window.setTimeout(() => {
+        useAppDataStore.getState().bindPage(pageKeyToBind);
+      }, 800);
     }
 
     if (isChecking && e && confettiRef.current && paperRef.current) {
@@ -212,208 +182,72 @@ export default function App() {
   };
 
   const selectGroup = (groupId: string) => {
-    setActiveGroupId(groupId);
-    setMode('edit');
-    setSharedTicks({});
+    selectGroupInUI(groupId);
+    clearSharedTicks();
     window.history.replaceState({}, '', window.location.pathname);
   };
 
   const createGroup = () => {
-    const newGroup: Group = {
-      id: createOwnedId(myId, nextGroupId),
-      title: `第 ${groups.length + 1} 组`,
-      items: [],
-    };
-    setNextGroupId((prev) => prev + 1);
-    setGroups((prev) => [...prev, newGroup]);
+    const newGroup = createGroupInData();
     selectGroup(newGroup.id);
-    setEditingGroupId(newGroup.id);
-    setGroupTitleDraft(newGroup.title);
-  };
-
-  const startRenameGroup = () => {
-    if (mode !== 'edit') return;
-    setEditingGroupId(activeGroup.id);
-    setGroupTitleDraft(activeGroup.title);
-  };
-
-  const saveGroupTitle = () => {
-    if (!editingGroupId) return;
-    const nextTitle = groupTitleDraft.trim();
-    if (!nextTitle) {
-      setEditingGroupId(null);
-      setGroupTitleDraft('');
-      return;
-    }
-
-    setGroups((prev) =>
-      prev.map((group) =>
-        group.id === editingGroupId
-          ? { ...group, title: nextTitle }
-          : group
-      )
-    );
-    setEditingGroupId(null);
-    setGroupTitleDraft('');
-  };
-
-  const cancelRenameGroup = () => {
-    setEditingGroupId(null);
-    setGroupTitleDraft('');
   };
 
   const addItem = () => {
-    const text = newItemText.trim();
-    if (!text) return;
-    if (activeGroup.items.some((item) => item.text === text)) return;
-
-    const previousNaturalPageCount = Math.max(1, Math.ceil(activeGroup.items.length / PAGE_SIZE));
-
-    const newItem: ListItem = {
-      id: createOwnedId(myId, nextItemId),
-      text,
-      origin: { type: 'self' },
-    };
-
-    setGroups((prev) =>
-      prev.map((group) =>
-        group.id === activeGroupId
-          ? { ...group, items: [...group.items, newItem] }
-          : group
-      )
-    );
-    setExtraPageCounts((prev) => {
-      const currentExtra = prev[activeGroupId] ?? 0;
-      if (currentExtra === 0) return prev;
-
-      const nextNaturalPageCount = Math.max(1, Math.ceil((activeGroup.items.length + 1) / PAGE_SIZE));
-      const consumedExtraPages = Math.max(0, nextNaturalPageCount - previousNaturalPageCount);
-      if (consumedExtraPages === 0) return prev;
-
-      const nextExtra = Math.max(0, currentExtra - consumedExtraPages);
-      if (nextExtra === currentExtra) return prev;
-
-      const next = { ...prev };
-      if (nextExtra > 0) next[activeGroupId] = nextExtra;
-      else delete next[activeGroupId];
-      return next;
-    });
-    setNextItemId((prev) => prev + 1);
+    addItemToData({ activeGroupId, text: newItemText });
     setNewItemText('');
   };
 
   const appendEmptyPage = () => {
-    setExtraPageCounts((prev) => ({
-      ...prev,
-      [activeGroupId]: (prev[activeGroupId] ?? 0) + 1,
-    }));
+    appendEmptyPageInData(activeGroupId);
   };
 
   const movePageToLowerStack = (pageKey: string) => {
-    setBoundPages((prev) => ({ ...prev, [pageKey]: true }));
+    bindPage(pageKey);
   };
 
   const removeItem = (itemId: string) => {
-    setGroups((prev) =>
-      prev.map((group) =>
-        group.id === activeGroupId
-          ? { ...group, items: group.items.filter((item) => item.id !== itemId) }
-          : group
-      )
-    );
-    setMyTicks((prev) => {
-      const next = { ...prev };
-      delete next[itemId];
-      return next;
-    });
-    setSharedTicks((prev) => {
-      const next = { ...prev };
-      delete next[itemId];
-      return next;
-    });
-    setExtraPageCounts((prev) => {
-      const currentExtra = prev[activeGroupId] ?? 0;
-      if (currentExtra === 0) return prev;
-
-      // Prune extra page capability as content shrinks to avoid "zombie" empty pages
-      const nextExtra = Math.max(0, currentExtra - 1);
-      if (nextExtra === currentExtra) return prev;
-
-      const next = { ...prev };
-      if (nextExtra > 0) next[activeGroupId] = nextExtra;
-      else delete next[activeGroupId];
-      return next;
-    });
+    removeItemInData({ activeGroupId, itemId });
   };
 
   const generateShareUrl = () => {
-    const encoded = generateShareKey(activeGroup, myTicks, myId);
-    const url = new URL(window.location.href);
-    url.searchParams.set('key', encoded);
-    return url.toString();
+    return createGroupShareUrl(activeGroup, myTicks, myId);
   };
 
   const copyToClipboard = async () => {
     try {
       await navigator.clipboard.writeText(generateShareUrl());
       setCopySuccess(true);
-      setTimeout(() => setCopySuccess(false), 2000);
+      window.setTimeout(() => useUIStore.getState().clearCopySuccess(), 2000);
     } catch (error) {
       console.error('Failed to copy!', error);
     }
   };
 
   const startComparison = () => {
-    setMode('compare-result');
+    enterComparisonResult();
   };
 
   const backToEdit = () => {
     window.history.replaceState({}, '', window.location.pathname);
-    setMode('edit');
-    setSharedTicks({});
+    backToWorkspace();
+    clearSharedTicks();
   };
 
   const deleteActiveGroup = () => {
     if (activeGroup.id === DEFAULT_GROUP_ID) return;
 
-    const groupIndex = groups.findIndex((group) => group.id === activeGroup.id);
-    const nextGroups = groups.filter((group) => group.id !== activeGroup.id);
-    const fallbackGroup = nextGroups[Math.max(0, groupIndex - 1)] ?? nextGroups[0] ?? createDefaultGroup();
-
-    setGroups(nextGroups);
-    setActiveGroupId(fallbackGroup.id);
-    setMyTicks((prev) => {
-      const next = { ...prev };
-      activeGroup.items.forEach((item) => {
-        delete next[item.id];
-      });
-      return next;
-    });
-    setSharedTicks((prev) => {
-      const next = { ...prev };
-      activeGroup.items.forEach((item) => {
-        delete next[item.id];
-      });
-      return next;
-    });
-    setBoundPages((prev) =>
-      Object.fromEntries(Object.entries(prev).filter(([key]) => !key.startsWith(`${activeGroup.id}:`)))
-    );
-    setExtraPageCounts((prev) => {
-      const next = { ...prev };
-      delete next[activeGroup.id];
-      return next;
-    });
-    setMode('edit');
-    setShowDeleteGroupConfirm(false);
-    setEditingGroupId(null);
-    setGroupTitleDraft('');
+    const fallbackGroupId = deleteGroupFromData(activeGroup.id);
+    if (fallbackGroupId) {
+      selectGroupInUI(fallbackGroupId);
+    }
+    backToWorkspace();
+    closeOverlay();
     setNewItemText('');
     window.history.replaceState({}, '', window.location.pathname);
   };
 
   const comparison = useMemo(() => {
-    if (mode !== 'compare-result') return null;
+    if (!isCompareResultFlow) return null;
 
     const bothDone: ListItem[] = [];
     const bothNotDone: ListItem[] = [];
@@ -431,28 +265,27 @@ export default function App() {
     });
 
     return { bothDone, bothNotDone, iDoneHeNot, heDoneINot };
-  }, [activeGroup.items, mode, myTicks, sharedTicks]);
+  }, [activeGroup.items, isCompareResultFlow, myTicks, sharedTicks]);
 
   return (
     <div
       className={`min-h-screen p-4 md:p-10 flex flex-col items-center transition-colors ${
-        !isGalleryClosed ? 'cursor-zoom-out' : ''
+        isWorkspaceFlow ? 'cursor-zoom-out' : ''
       }`}
       onClick={() => {
-        if (!isGalleryClosed && mode === 'edit') setIsGalleryClosed(true);
+        if (flow === 'workspace') closeToGallery();
       }}
     >
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="w-full max-w-[1240px]">
         <div className="w-full" onClick={(e) => e.stopPropagation()}>
           <AppHeader
             copySuccess={copySuccess}
-            isGalleryClosed={isGalleryClosed}
-            mode={mode}
+            flow={flow}
             onBack={backToEdit}
             onCopy={copyToClipboard}
-            onReset={() => setShowResetConfirm(true)}
-            onShowQrCode={() => setShowQrCode(true)}
-            onToggleGalleryClosed={() => setIsGalleryClosed((prev) => !prev)}
+            onReset={showResetConfirm}
+            onShowQrCode={showQrCode}
+            onTogglePrimaryView={togglePrimaryView}
           />
         </div>
 
@@ -466,11 +299,11 @@ export default function App() {
         
           <LayoutGroup id="workspace-main">
             <AnimatePresence mode="popLayout" initial={false}>
-              {mode === 'compare-result' && comparison ? (
+              {isCompareResultFlow && comparison ? (
                 <motion.div key="comparison" layout className="w-full max-w-[1240px]">
                   <ComparisonPanel comparison={comparison} group={activeGroup} />
                 </motion.div>
-              ) : !isGalleryClosed ? (
+              ) : isWorkspaceFlow ? (
                 <motion.div
                   key="open-workspace"
                   initial={{ opacity: 0 }}
@@ -488,7 +321,7 @@ export default function App() {
                     <GroupWorkspace
                       activeGroup={activeGroup}
                       activeGroupPages={stackPages}
-                      mode={mode}
+                      flow={flow}
                       newItemText={newItemText}
                       pageSize={PAGE_SIZE}
                       paperRef={paperRef}
@@ -560,8 +393,7 @@ export default function App() {
                           onRemoveItem={removeItem}
                           onToggleTick={toggleTick}
                           onOpen={() => {
-                            setActiveGroupId(group.id);
-                            setIsGalleryClosed(false);
+                            openGroupFromGallery(group.id);
                           }}
                         />
                       </motion.div>
@@ -591,7 +423,7 @@ export default function App() {
         </AnimatePresence>
 
         <footer className="mt-10 flex flex-col items-center">
-          {mode === 'compare-step-1' && (
+          {isCompareReviewFlow && (
             <button
               onClick={startComparison}
               className="px-12 py-4 bg-neutral-900 text-white rounded-full font-medium tracking-tight shadow-xl hover:bg-black transition-all flex items-center gap-3"
@@ -600,7 +432,7 @@ export default function App() {
               对比这一组
             </button>
           )}
-          {mode === 'edit' && (
+          {isEditingFlow && (
             <div className="mt-3 flex items-center gap-4 ui-mono opacity-55">
               <span className="flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-klein" />
@@ -618,15 +450,15 @@ export default function App() {
         </footer>
 
         <AnimatePresence>
-          {showResetConfirm && (
+          {overlay === 'reset-confirm' && (
             <ModalDialog
               title="确认重置吗？"
               body="这会清空你本地所有组、勾选、自己新增的项目、装订记录，以及已导入的外部组，并恢复成默认第一组。"
-              onClose={() => setShowResetConfirm(false)}
+              onClose={closeOverlay}
             >
                 <div className="flex gap-3">
                   <button
-                    onClick={() => setShowResetConfirm(false)}
+                    onClick={closeOverlay}
                     className="flex-1 py-3 bg-neutral-100 hover:bg-neutral-200 text-neutral-600 rounded-xl font-medium transition-colors"
                   >
                     取消
@@ -635,17 +467,10 @@ export default function App() {
                     onClick={() => {
                         const next = createDefaultState();
                         window.history.replaceState({}, '', window.location.pathname);
-                        localStorage.removeItem(LOCAL_STATE_STORAGE_KEY);
-                        setGroups(next.groups);
-                        setActiveGroupId(next.activeGroupId);
-                        setMyTicks({});
-                        setBoundPages({});
-                        setExtraPageCounts({});
-                        setNextGroupId(next.nextGroupId);
-                        setNextItemId(next.nextItemId);
-                        setSharedTicks({});
-                        setMode('edit');
-                        setShowResetConfirm(false);
+                        clearPersistedAppState();
+                        resetData(next);
+                        hydrateUI({ activeGroupId: next.activeGroupId, flow: 'workspace' });
+                        closeOverlay();
                         setNewItemText('');
                     }}
                     className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-medium transition-colors"
@@ -658,15 +483,15 @@ export default function App() {
         </AnimatePresence>
         
         <AnimatePresence>
-          {showDeleteGroupConfirm && (
+          {overlay === 'delete-group-confirm' && (
              <ModalDialog
                title={`确认删除 "${activeGroup.title}" 吗？`}
                body="删除后无法恢复，包括里面新增的项目和勾选记录。"
-               onClose={() => setShowDeleteGroupConfirm(false)}
+               onClose={closeOverlay}
              >
                <div className="flex gap-3">
                  <button
-                   onClick={() => setShowDeleteGroupConfirm(false)}
+                   onClick={closeOverlay}
                    className="flex-1 py-3 bg-neutral-100 hover:bg-neutral-200 text-neutral-600 rounded-xl font-medium transition-colors"
                  >
                    取消
@@ -682,8 +507,8 @@ export default function App() {
           )}
         </AnimatePresence>
         
-        {showQrCode ? (
-           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowQrCode(false)}>
+        {overlay === 'qr' ? (
+           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={closeOverlay}>
              <div className="bg-white p-8 rounded-2xl shadow-2xl flex flex-col items-center gap-6" onClick={e => e.stopPropagation()}>
                <div className="bg-white p-2 rounded-xl border border-neutral-100 shadow-sm">
                  <QRCodeCanvas value={generateShareUrl()} size={200} level="M" />

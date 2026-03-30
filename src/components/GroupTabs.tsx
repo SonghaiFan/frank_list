@@ -1,6 +1,6 @@
 import { Plus } from 'lucide-react';
-import type { AppMode, Group } from '../lib/notebook-types';
-import { cn } from '../lib/cn';
+import type { AppMode, Group } from '@/lib/notebook-types';
+import { cn } from '@/lib/cn';
 
 interface GroupTabsProps {
   activeGroupId: string;

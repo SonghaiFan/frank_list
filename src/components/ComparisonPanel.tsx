@@ -1,6 +1,6 @@
 import { motion } from 'motion/react';
-import type { Group, ListItem } from '../lib/notebook-types';
-import { cn } from '../lib/cn';
+import type { Group, ListItem } from '@/lib/notebook-types';
+import { cn } from '@/lib/cn';
 
 interface ComparisonPanelProps {
   comparison: {

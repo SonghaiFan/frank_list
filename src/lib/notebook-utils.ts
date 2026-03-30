@@ -13,7 +13,7 @@ import {
   LOCAL_STATE_STORAGE_KEY,
   PAGE_SIZE,
   TOP_SEP,
-} from './workspace-constants';
+} from '@/lib/workspace-constants';
 import type {
   CompactLocalGroup,
   CompactLocalItem,
@@ -25,7 +25,7 @@ import type {
   ListItem,
   PersistedAppState,
   SharedGroupData,
-} from './notebook-types';
+} from '@/lib/notebook-types';
 
 export const createDefaultItem = (text: string, index: number): ListItem => ({
   id: `_${index.toString(36)}`,

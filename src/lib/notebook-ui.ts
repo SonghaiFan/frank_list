@@ -1,5 +1,5 @@
 import type React from 'react';
-import type { ItemOrigin } from './notebook-types';
+import type { ItemOrigin } from '@/lib/notebook-types';
 
 const getHashFromString = (value: string) => {
   let hash = 0;

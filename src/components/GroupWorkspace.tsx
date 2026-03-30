@@ -1,12 +1,13 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import type { AppMode, Group, GroupPage } from '../lib/notebook-types';
-import { CardStack } from './CardStack';
+import type { Group, GroupPage } from '@/lib/notebook-types';
+import type { UIFlow } from '@/stores/ui-store';
+import { CardStack } from '@/components/CardStack';
 
 interface GroupWorkspaceProps {
   activeGroup: Group;
   activeGroupPages: GroupPage[];
-  mode: AppMode;
+  flow: UIFlow;
   newItemText: string;
   pageSize: number;
   paperRef: React.RefObject<HTMLDivElement | null>;
@@ -22,7 +23,7 @@ interface GroupWorkspaceProps {
 export function GroupWorkspace({
   activeGroup,
   activeGroupPages,
-  mode,
+  flow,
   newItemText,
   pageSize,
   paperRef,
@@ -34,6 +35,9 @@ export function GroupWorkspace({
   onToggleTick,
   onAddItem,
 }: GroupWorkspaceProps) {
+  const isCompareReviewFlow = flow === 'compare-review';
+  const cardMode = isCompareReviewFlow ? 'compare-step-1' : 'edit';
+
   return (
     <motion.div
       onClick={(e) => e.stopPropagation()}
@@ -55,14 +59,14 @@ export function GroupWorkspace({
           className="space-y-5"
           ref={paperRef}
         >
-          {mode === 'compare-step-1' && (
+          {isCompareReviewFlow && (
             <div className="list-text rounded-xl border border-klein/10 bg-klein/3 px-5 py-4 font-bold text-klein shadow-[0_18px_40px_rgba(0,47,167,0.05)]">
               收到这一组的同步请求：请在下面逐页勾选你的进度，完成后可以进入对比。
             </div>
           )}
 
           <CardStack
-            mode={mode}
+            mode={cardMode}
             newItemText={newItemText}
             pageSize={pageSize}
             pages={activeGroupPages}

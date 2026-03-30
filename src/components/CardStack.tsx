@@ -1,10 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Plus } from 'lucide-react';
 import { motion } from 'motion/react';
-import type { AppMode, GroupPage } from '../lib/notebook-types';
-import { cn } from '../lib/cn';
-import { PAGE_CARD_HEIGHT_PX, PAGE_CARD_WIDTH_PX } from '../lib/workspace-constants';
-import { PageCard } from './PageCard';
+import type { AppMode, GroupPage } from '@/lib/notebook-types';
+import { cn } from '@/lib/cn';
+import { PAGE_CARD_HEIGHT_PX, PAGE_CARD_WIDTH_PX } from '@/lib/workspace-constants';
+import { PageCard } from '@/components/PageCard';
 
 interface CardStackProps {
   className?: string;
@@ -125,7 +125,6 @@ export function CardStack({
           >
             <PageCard
               page={page}
-              pageSize={pageSize}
               interactive={interactive}
               isActive={isActive}
               mode={mode}
@@ -133,7 +132,6 @@ export function CardStack({
               showAddItemInput={isActive && shouldShowAddItemInput}
               ticks={ticks}
               onAddItem={onAddItem}
-              onBindPage={onBindPage}
               onItemTextChange={onItemTextChange}
               onRemoveItem={onRemoveItem}
               onToggleTick={onToggleTick}
