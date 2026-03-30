@@ -1,0 +1,299 @@
+{
+  "personal_info": {
+    "first_name": "Songhai",
+    "first_name_pronounce": "/ˈsɒŋˌhaɪ/",
+    "last_name": "Fan",
+    "last_name_pronounce": "/fæn/",
+    "nickname": "Frank",
+    "location": "Melbourne, Australia",
+    "phone": "+61 0434 780 632",
+    "email": "songhai.fan2025@gmail.com",
+    "links": {
+      "github": "https://github.com/SonghaiFan",
+      "website": "https://songhai.one",
+      "linkedin": "https://www.linkedin.com/in/songhaifan"
+    },
+    "summary": "PhD Researcher in Human-Centered Computing passionate about leveraging LLMs and AI for enhanced human-data interaction. Expertise in narrative visualization, immersive analytics, and data storytelling, with a focus on developing AI-augmented frameworks that bridge human understanding with complex data systems. Skilled in Python, React, D3.js, and advanced NLP techniques, combining technical proficiency with a deep interest in human-AI collaborative systems."
+  },
+
+  "education": [
+    {
+      "degree": "PhD in Human-Centered Computing",
+      "institution": "Monash University, Australia",
+      "period": "Oct 2021 – Jul 2025 Expected",
+      "research": "Research: Narrative Visualization and Analytics",
+      "highlights": [
+        "Narrative visualization frameworks, LLM text visualization, and human-centered data interfaces"
+      ]
+    },
+    {
+      "degree": "Master of Data Science (Awarded with Distinction)",
+      "institution": "Monash University, Australia",
+      "period": "June 2019 – June 2021",
+      "highlights": [
+        "Key courses: Business Intelligence Modelling, Data Exploration & Visualisation, Statistical Data Modelling, Big Data Processing, Data Wrangling, Applied Data Analysis, Data Warehousing"
+      ]
+    },
+    {
+      "degree": "Bachelor of Engineering (Honors)",
+      "institution": "Monash University, Australia / Central South University, China",
+      "period": "March 2014 – Dec 2018"
+    }
+  ],
+
+  "work_experience": [
+    {
+      "title": "Teaching Associate & Tutor",
+      "company": "Monash University",
+      "location": "Melbourne, Australia",
+      "period": "Oct 2021 – Present",
+      "type": "Part-time",
+      "responsibilities": [
+        "Tutored undergraduate and graduate students in data science, visualization, and human-computer interaction courses",
+        "Designed and delivered interactive workshops on D3.js, Python data analysis, and research methodologies",
+        "Mentored 200+ students in capstone projects involving data visualization and UX"
+      ],
+      "achievements": [
+        "Received consistently high student evaluation scores (4.8/5.0 average)",
+        "Developed innovative teaching materials for interactive data visualization techniques"
+      ]
+    }
+  ],
+
+  "phd_research": {
+    "sections": [
+      {
+        "title": "Narrative Visualization | NLP | Human-Centered AI",
+        "items": [
+          {
+            "point": "Developed the Time-Track Narrative Graph (TTNG) to visualize complex narrative transitions over time and theme dimensions."
+          },
+          {
+            "point": "Built a Graph-to-Text pipeline using LLMs (e.g., GPT) to generate synthetic news datasets for evaluating narrative comprehension."
+          },
+          {
+            "point": "Conducted user studies aligning algorithmic outputs with human understanding across cognitive tasks."
+          },
+          {
+            "point": "Applied advanced NLP techniques: topic modeling, sentiment analysis, and text summarization to structure and analyze news narratives."
+          },
+          {
+            "point": "Explored scrollytelling and immersive analytics to improve user engagement and comprehension in interactive storytelling."
+          }
+        ]
+      }
+    ]
+  },
+  "skills_pool": {
+    "data_analysis": {
+      "name": "Data Analysis & Storytelling",
+      "category": "data_science",
+      "level": 5,
+      "tech_stack": [
+        "Python (pandas, NumPy)",
+        "R (tidyverse)",
+        "SQL",
+        "Tableau",
+        "Power BI"
+      ],
+      "core_skill": [
+        "Data Cleaning & Wrangling",
+        "Exploratory Data Analysis (EDA)",
+        "Business Intelligence"
+      ],
+      "methodology": ["Statistical Modelling", "Narrative Visualization"],
+      "use_scenario": ["Dashboard Development", "Data-rich Representation"]
+    },
+    "data_science_ai": {
+      "name": "Data Science & AI",
+      "category": "artificial_intelligence",
+      "level": 3,
+      "tech_stack": [
+        "scikit-learn",
+        "PyTorch",
+        "TensorFlow",
+        "NLTK",
+        "HuggingFace",
+        "OpenAI API"
+      ],
+      "core_skill": [
+        "Feature Engineering",
+        "Model Development & Evaluation",
+        "Prompt Engineering"
+      ],
+      "methodology": [
+        "Regression & Classification",
+        "Topic Modeling",
+        "Fine-Tuning"
+      ],
+      "use_scenario": [
+        "Forecasting",
+        "Recommendation Systems",
+        "Text Classification",
+        "Intelligent Q&A"
+      ]
+    },
+    "research_evaluation": {
+      "name": "Research & Evaluation",
+      "category": "research",
+      "level": 4,
+      "core_skill": [
+        "Problem Framing",
+        "Hypothesis Generation",
+        "Insight Synthesis",
+        "Prototyping & Iteration"
+      ],
+      "methodology": [
+        "Mixed Methods (Quant + Qual)",
+        "Controlled Experiments",
+        "Statistical Testing (t-test, ANOVA)"
+      ],
+      "use_scenario": [
+        "User Behavior Investigation",
+        "AI Product Evaluation",
+        "Design Pattern Derivation"
+      ]
+    },
+    "big_data_engineering": {
+      "name": "Big Data & Data Engineering",
+      "category": "data_engineering",
+      "level": 3,
+      "tech_stack": ["Hadoop", "Spark", "Kafka", "SQL", "Firebase"],
+      "core_skill": [
+        "ETL Pipeline",
+        "Data Warehousing",
+        "Real-time Data Processing"
+      ],
+      "methodology": [
+        "Batch vs Streaming Architecture",
+        "Schema Design",
+        "Data Quality Validation"
+      ],
+      "use_scenario": ["Large-scale Log Processing", "Data Lake Construction"]
+    },
+    "web_development_ux": {
+      "name": "Web Development & UX",
+      "category": "user_experience",
+      "level": 5,
+      "tech_stack": [
+        "JavaScript",
+        "React",
+        "TailwindCSS",
+        "D3.js",
+        "Next.js",
+        "Google Analytics"
+      ],
+      "core_skill": [
+        "Interactive UI",
+        "Frontend Data Viz",
+        "A/B Testing",
+        "UX Flow Design"
+      ],
+      "use_scenario": [
+        "User Behavior Tracking",
+        "Dynamic Dashboard Development",
+        "Interactive Data Visualization"
+      ]
+    }
+  },
+
+  "projects": [
+    {
+      "id": "causal-network-viz",
+      "title": "Causal Relationship Network Visualization",
+      "description": "Built an interactive web app to visualize sentence-level causal networks using NLP and network analysis.",
+      "features": [
+        "Implemented topic clustering, centrality analysis, filtering, and search functionality."
+      ],
+      "tech_stack": "D3.js, React, Python, NetworkX, NLP APIs",
+      "year": "2023"
+    },
+    {
+      "id": "perspectiva-tool",
+      "title": "Perspectiva – Participatory Causal Loop Diagram Tool",
+      "description": "Designed a system to document and visualize stakeholder-driven causal models for urban governance.",
+      "features": [
+        "Enhanced transparency in data-driven policy-making through participatory modeling."
+      ],
+      "tech_stack": "React, D3.js, Node.js, Firebase",
+      "year": "2022"
+    },
+    {
+      "id": "data-storytelling-cases",
+      "title": "Data Storytelling Case Studies",
+      "description": "Collaborative data visualization projects with research organizations focusing on narrative-driven insights.",
+      "features": [],
+      "tech_stack": "D3.js, Python, Scrollytelling frameworks",
+      "year": "2021-2023",
+      "items": [
+        {
+          "title": "Disadvantage in the Media",
+          "details": [
+            "With the Paul Ramsay Foundation, analyzed 200+ news articles to uncover media framing of disadvantaged communities."
+          ]
+        },
+        {
+          "title": "Climate Change Awareness",
+          "details": [
+            "With the Monash Climate Change Communication Research Hub (MCCCRH), created an interactive climate visualization web app with custom threshold controls and historical comparisons."
+          ]
+        }
+      ]
+    }
+  ],
+
+  "publications": [
+    {
+      "title": "A Directed Graph Model and Experimental Framework for Design and Study of News Narrative Visualisation",
+      "authors": "S Fan, T Dwyer, S Goodwin, H Purchase",
+      "venue": "IEEE VIS",
+      "year": "2025",
+      "type": "Full Paper under review"
+    },
+    {
+      "title": "ACCESS: A Benchmark for Abstract Causal Event Discovery and Reasoning",
+      "authors": "G Haffari, V Vo, L Qu, T Feng, Y Hua, X Kang, S Fan, T Dwyer, L Soon",
+      "venue": "NAACL",
+      "year": "2025",
+      "type": "Paper"
+    },
+    {
+      "title": "Discourse lines: visualising current policy and media storylines of opportunity and disadvantage with narrative exploration maps",
+      "authors": "S Angus, S Borgohain, S Fan, S Goodwin, A Kristanto, L O'Neill",
+      "venue": "NLVIZ",
+      "year": "2024",
+      "type": "Workshop Paper"
+    },
+    {
+      "title": "Understanding the Narrative: An Exploration of Narrative Structure and Visualisation Techniques in News Media",
+      "authors": "S Fan, Y Ying, S Goodwin, S Angus, H Purchase, T Dwyer",
+      "venue": "IEEE VIS",
+      "year": "2023",
+      "type": "Poster"
+    }
+  ],
+
+  "certifications": [
+    "Data Storytelling for Business – Tableau (2023)",
+    "Power BI Data Analyst Associate – Microsoft (2023)",
+    "Machine Learning Specialist – Scikit-learn & PyTorch (2022)",
+    "Advanced JavaScript – CodeAcademy (2021)",
+    "UX Methods – Google UX Design Certificate (2022)"
+  ],
+
+  "languages": [
+    {
+      "language": "Chinese",
+      "proficiency": "Native"
+    },
+    {
+      "language": "English",
+      "proficiency": "Fluent"
+    }
+  ],
+
+  "interests": [
+    "Music: Guitarist in a local band, participant in Melbourne Chinese Music Festival",
+    "Illustration: Digital art and character design"
+  ]
+}

@@ -1,0 +1,342 @@
+{
+  "config": {
+    "default_version": "nlp-researcher"
+  },
+
+  "versions": {
+    "data-scientist": {
+      "display_name": "Data Scientist / Analyst",
+      "theme_color": "#1D4ED8",
+      "icon": "fas fa-chart-line",
+      "summary": "PhD Researcher in Human-Centered Computing passionate about data science and analytics for enhanced human-data interaction. Expertise in statistical modeling, data visualization, and A/B testing, with a focus on developing data-driven insights that bridge human understanding with complex datasets. Skilled in Python, R, SQL, and Tableau, combining technical proficiency with a deep interest in evidence-based decision making.",
+      "cover_letter": {
+        "recipient": {
+          "company": "[Company Name]",
+          "position": "[Position Title]",
+          "department": "[Department/Team]"
+        },
+        "opening": "Dear Hiring Manager,",
+        "body": [
+          "I am writing to express my strong interest in the Data Scientist position at [Company Name]. As a PhD researcher in Human-Centered Computing with extensive experience in data analysis, statistical modeling, and visualization, I am excited about the opportunity to contribute to your data-driven initiatives.",
+          "My research background has equipped me with deep expertise in Python, R, SQL, and advanced analytics tools like Tableau and Power BI. Through my work on narrative visualization frameworks and LLM text analysis, I have developed a unique ability to translate complex data insights into compelling stories that drive business decisions. My experience includes building interactive dashboards, conducting A/B testing, and developing predictive models for user behavior analysis.",
+          "What particularly attracts me to this role is the opportunity to apply my technical skills in a business context while continuing to bridge the gap between human understanding and data complexity. I am passionate about creating data solutions that are not only technically sound but also accessible and actionable for stakeholders across all levels of an organization.",
+          "I would welcome the opportunity to discuss how my background in data science research and practical experience with analytics tools can contribute to [Company Name]'s success. Thank you for considering my application."
+        ],
+        "closing": "Sincerely,",
+        "signature": "Frank"
+      },
+
+      "content_config": {
+        "include_cover_letter": true,
+        "selected_skills": [
+          "data_analysis",
+          "big_data_engineering",
+          "data_science_ai"
+        ],
+        "sections_order": [
+          "summary",
+          "technical_skills",
+          "projects",
+          "phd_research",
+          "education",
+          "publications",
+          "work_experience",
+          "certifications"
+        ],
+        "projects_limit": 3,
+        "include_projects": [
+          "causal-network-viz",
+          "perspectiva-tool",
+          "data-storytelling-cases"
+        ]
+      },
+
+      "content_overrides": {
+        "project_descriptions": {
+          "causal-network-viz": "Built an interactive web app to visualize sentence-level causal networks using NLP and network analysis, with statistical modeling for relationship discovery.",
+          "perspectiva-tool": "Designed a system to document and visualize stakeholder-driven causal models for urban governance, incorporating data-driven policy analysis.",
+          "data-storytelling-cases": "Collaborative data visualization projects with research organizations focusing on narrative-driven insights and statistical validation."
+        }
+      }
+    },
+
+    "nlp-ai-engineer": {
+      "display_name": "NLP / AI Engineer",
+      "theme_color": "#377446",
+      "icon": "fas fa-robot",
+      "summary": "PhD Researcher in Human-Centered Computing passionate about leveraging LLMs and AI for enhanced human-data interaction. Expertise in natural language processing, machine learning, and text analysis, with a focus on developing AI-augmented frameworks that bridge human understanding with complex language systems. Skilled in Python, PyTorch, and advanced NLP techniques, combining technical proficiency with a deep interest in human-AI collaborative systems.",
+      "cover_letter": {
+        "recipient": {
+          "company": "[Company Name]",
+          "position": "[Position Title]",
+          "department": "[AI/Engineering Team]"
+        },
+        "opening": "Dear Hiring Manager,",
+        "body": [
+          "I am excited to apply for the NLP/AI Engineer position at [Company Name]. With my PhD research focused on leveraging LLMs and AI for enhanced human-data interaction, combined with hands-on experience in PyTorch, TensorFlow, and HuggingFace, I am well-positioned to contribute to your AI initiatives.",
+          "My research has involved developing Graph-to-Text pipelines using GPT models, implementing advanced NLP techniques including topic modeling and sentiment analysis, and creating AI-augmented frameworks for narrative comprehension. I have practical experience with prompt engineering, model fine-tuning, and building intelligent Q&A systems that bridge human understanding with complex language models.",
+          "What excites me most about this opportunity is the chance to apply cutting-edge NLP research in a production environment. My background in human-centered AI ensures that I not only focus on technical performance but also on creating AI systems that are interpretable, reliable, and aligned with human needs and expectations.",
+          "I am eager to discuss how my expertise in NLP, machine learning, and human-AI interaction can help [Company Name] build innovative AI solutions. Thank you for your consideration."
+        ],
+        "closing": "Best regards,",
+        "signature": "Frank"
+      },
+
+      "content_config": {
+        "include_cover_letter": true,
+        "selected_skills": [
+          "data_science_ai",
+          "data_analysis",
+          "research_evaluation"
+        ],
+        "sections_order": [
+          "summary",
+          "phd_research",
+          "technical_skills",
+          "projects",
+          "publications",
+          "education",
+          "work_experience",
+          "certifications"
+        ],
+        "projects_limit": 3,
+        "include_projects": [
+          "causal-network-viz",
+          "perspectiva-tool",
+          "data-storytelling-cases"
+        ]
+      },
+
+      "content_overrides": {
+        "project_descriptions": {
+          "causal-network-viz": "Built an interactive web app to visualize sentence-level causal networks using NLP and network analysis, with advanced language processing for relationship extraction.",
+          "perspectiva-tool": "Designed a system to document and visualize stakeholder-driven causal models for urban governance, incorporating AI-augmented text analysis.",
+          "data-storytelling-cases": "Collaborative data visualization projects with research organizations focusing on narrative-driven insights and intelligent text analysis."
+        }
+      }
+    },
+
+    "nlp-researcher": {
+      "display_name": "NLP Research Scientist (Canva)",
+      "theme_color": "#3A69E7",
+      "icon": "fas fa-brain",
+      "summary": "PhD Researcher in Human-Centered Computing focusing on foundational and multimodal NLP. Experience translating cutting-edge LLM and graph-to-text research into scalable prototypes, designing rigorous experiments, and collaborating with engineers to productionize model improvements. Published work spans narrative structure modelling, causal reasoning, and user-aligned evaluation. Passionate about advancing model capability while ensuring real-world impact, reliability, and human-centered alignment.",
+      "cover_letter": {
+        "recipient": {
+          "company": "Canva",
+          "position": "Senior Research Scientist (NLP / Foundational Models)",
+          "department": "AI Research"
+        },
+        "opening": "Dear Canva AI Research Team,",
+        "body": [
+          "I'm genuinely excited about the Senior Research Scientist role at Canva—not just for the work, but for the people and the vibe. I first connected with Canva staff at the VIS conference, and it was clear your team cares about making design and data accessible, creative, and fun.",
+          "When I started my PhD, Canva had just acquired Flourish, and that move really inspired me. It showed me Canva was serious about data visualization and storytelling, and it’s been awesome to watch how you’ve blended interactive docs, AI, and visual tools since then.",
+          "I’ll be honest: I don’t have a ton of industry experience yet, but I’m always learning and growing. This isn’t the first time (and definitely won’t be the last) that I’ve applied to Canva—because it’s my dream company and I truly believe I belong here.",
+          "My research has always been about making data and text come alive—building narrative graphs, experimenting with LLMs, and creating prototypes that help people explore and understand information in new ways. I love the idea of bringing together text, visualization, and AI to create experiences that are not just smart, but genuinely engaging and useful.",
+          "I’m passionate about working with teams who value openness, playfulness, and impact. Canva’s mission to empower everyone to design and communicate fits perfectly with how I approach research and product work. I’d love to help push the boundaries of what’s possible with interactive, AI-powered storytelling at Canva.",
+          "Let’s chat about how my background in NLP, data viz, and human-centered design could help shape the next wave of creative tools at Canva!"
+        ],
+        "closing": "Kind regards,",
+        "signature": "Frank"
+      },
+      "content_config": {
+        "include_cover_letter": true,
+        "selected_skills": [
+          "data_science_ai",
+          "research_evaluation",
+          "data_analysis"
+        ],
+        "sections_order": [
+          "summary",
+          "phd_research",
+          "publications",
+          "technical_skills",
+          "projects",
+          "education",
+          "work_experience"
+        ],
+        "projects_limit": 3,
+        "include_projects": [
+          "causal-network-viz",
+          "data-storytelling-cases",
+          "perspectiva-tool"
+        ]
+      },
+      "content_overrides": {
+        "project_descriptions": {
+          "causal-network-viz": "Interactive causal relationship exploration combining NLP extraction, graph analytics, and usability-focused filtering—prototype for model comprehension and reasoning assessment.",
+          "perspectiva-tool": "Participatory causal modeling platform emphasizing collaborative knowledge capture and system reasoning—supports hypothesis formation for downstream AI tasks.",
+          "data-storytelling-cases": "Narrative visualization studies integrating topic modeling, sentiment analysis, and user evaluation—informing alignment between model output and human interpretation."
+        }
+      }
+    },
+
+    "ux-researcher": {
+      "display_name": "UX Research",
+      "theme_color": "#000000",
+      "icon": "fas fa-users",
+      "summary": "PhD Researcher in Human-Centered Computing passionate about user experience research and human-computer interaction. Expertise in experimental design, usability testing, and mixed-methods research, with a focus on developing user-centered frameworks that bridge human needs with technology systems. Skilled in research methodologies and design thinking, combining academic rigor with a deep interest in creating intuitive human-computer interfaces.",
+      "cover_letter": {
+        "recipient": {
+          "company": "Canvas",
+          "position": "[Position Title]",
+          "department": "[UX/Research Team]"
+        },
+        "opening": "Dear Hiring Team,",
+        "body": [
+          "I am writing to express my interest in the UX Research position at [Company Name]. As a PhD researcher in Human-Centered Computing with extensive experience in experimental design, usability testing, and mixed-methods research, I am passionate about creating user-centered solutions that bridge technology and human needs.",
+          "My research background has provided me with deep expertise in conducting controlled experiments, statistical testing, and translating complex user insights into actionable design recommendations. I have led user studies involving 200+ participants, developed innovative research methodologies for evaluating AI systems, and created frameworks that align algorithmic outputs with human understanding across cognitive tasks.",
+          "What draws me to this role is the opportunity to apply rigorous research methodologies in a product development context. My experience in both qualitative and quantitative research methods, combined with my technical background in data analysis and visualization, allows me to provide comprehensive insights that inform both strategic decisions and detailed design implementations.",
+          "I would be thrilled to discuss how my research expertise and passion for human-centered design can contribute to creating exceptional user experiences at [Company Name]. Thank you for considering my application."
+        ],
+        "closing": "Warm regards,",
+        "signature": "Frank"
+      },
+
+      "content_config": {
+        "include_cover_letter": true,
+        "selected_skills": [
+          "web_development_ux",
+          "research_evaluation",
+          "data_analysis"
+        ],
+        "sections_order": [
+          "summary",
+          "phd_research",
+          "technical_skills",
+          "publications",
+          "projects",
+          "education",
+          "work_experience",
+          "certifications"
+        ],
+        "projects_limit": 3,
+        "include_projects": [
+          "causal-network-viz",
+          "perspectiva-tool",
+          "data-storytelling-cases"
+        ]
+      },
+
+      "content_overrides": {
+        "project_descriptions": {
+          "causal-network-viz": "Built an interactive web app to visualize sentence-level causal networks using NLP and network analysis, with user-centered design research and usability testing.",
+          "perspectiva-tool": "Designed a system to document and visualize stakeholder-driven causal models for urban governance, incorporating participatory design methodology.",
+          "data-storytelling-cases": "Collaborative data visualization projects with research organizations focusing on narrative-driven insights and user experience research."
+        }
+      }
+    },
+
+    "data-viz-developer": {
+      "display_name": "Data Viz Developer",
+      "theme_color": "#F97316",
+      "icon": "fas fa-chart-bar",
+      "summary": "PhD Researcher in Human-Centered Computing passionate about data visualization and web development for enhanced human-data interaction. Expertise in narrative visualization, interactive design, and data storytelling, with a focus on developing visual frameworks that bridge human understanding with complex data systems. Skilled in JavaScript, React, D3.js, and visualization techniques, combining technical proficiency with a deep interest in immersive analytics.",
+      "cover_letter": {
+        "recipient": {
+          "company": "[Company Name]",
+          "position": "[Position Title]",
+          "department": "[Development/Design Team]"
+        },
+        "opening": "Dear Hiring Manager,",
+        "body": [
+          "I am excited to apply for the Data Visualization Developer position at [Company Name]. With my PhD research in narrative visualization and extensive hands-on experience with D3.js, React, and interactive design, I am passionate about creating compelling visual experiences that make complex data accessible and engaging.",
+          "My technical expertise includes building interactive web applications, developing custom scrollytelling frameworks, and creating dynamic dashboards using modern JavaScript technologies. Through projects like causal network visualizations and participatory modeling tools, I have demonstrated my ability to transform complex datasets into intuitive, user-friendly interfaces that drive understanding and decision-making.",
+          "What particularly excites me about this opportunity is the chance to combine my research background in human-centered design with practical web development skills. I understand not only how to create beautiful visualizations but also how to ensure they effectively communicate insights and support user goals through thoughtful interaction design and accessibility considerations.",
+          "I would love to discuss how my unique combination of visualization research, technical development skills, and user experience expertise can help [Company Name] create impactful data experiences. Thank you for your time and consideration."
+        ],
+        "closing": "Kind regards,",
+        "signature": "Frank"
+      },
+
+      "content_config": {
+        "include_cover_letter": true,
+        "selected_skills": [
+          "web_development_ux",
+          "data_analysis",
+          "data_science_ai"
+        ],
+        "sections_order": [
+          "summary",
+          "technical_skills",
+          "projects",
+          "phd_research",
+          "education",
+          "publications",
+          "work_experience",
+          "certifications"
+        ],
+        "projects_limit": 4,
+        "include_projects": [
+          "causal-network-viz",
+          "perspectiva-tool",
+          "data-storytelling-cases"
+        ]
+      },
+
+      "content_overrides": {
+        "project_descriptions": {
+          "causal-network-viz": "Built an interactive web app to visualize sentence-level causal networks using D3.js, React, and advanced interactive features for complex relationship analysis.",
+          "perspectiva-tool": "Designed a system to document and visualize stakeholder-driven causal models for urban governance, featuring custom dashboard design and interactive data exploration.",
+          "data-storytelling-cases": "Collaborative data visualization projects with research organizations focusing on narrative-driven insights using scrollytelling and interactive charts."
+        }
+      }
+    },
+
+    "amazon-applied-scientist-intern": {
+      "display_name": "Applied Scientist Intern (Amazon)",
+      "theme_color": "#FF9900",
+      "icon": "fas fa-flask",
+      "summary": "PhD researcher (Human-Centered Computing) with focus on NLP, information retrieval, causal / narrative structure modeling and user-aligned evaluation. Blend of experimental rigor (VIS, NAACL publications) and pragmatic prototyping across LLM pipelines, graph/text generation, and interactive analysis tools. Interested in recommender systems + IR problems where large-scale behavioral signals meet language models to improve relevance and explainability.",
+      "cover_letter": {
+        "recipient": {
+          "company": "Amazon",
+          "position": "Applied Scientist Intern",
+          "department": "[Team / Science Group]"
+        },
+        "opening": "Dear Amazon Science Team,",
+        "body": [
+          "I'm applying for the 6‑month Applied Scientist Intern role in Melbourne (Jan–Mar 2026 start window). I’m a PhD researcher whose work bridges NLP, narrative structure modelling, and human-centered evaluation—skills I’m keen to apply to real IR / recommender problems at Amazon scale.",
+          "In my research I’ve built a Time‑Track Narrative Graph and graph‑to‑text LLM pipeline to synthesize structured representations and controllable text datasets. That required rapid prototyping (Python / PyTorch / HuggingFace), careful experiment design, and quantitative + qualitative evaluation loops—very similar to iterating on ranking / recommendation models with offline metrics and human judgment.",
+          "I enjoy turning ambiguous problem statements into measurable hypotheses: define target signal, design ablations, instrument evaluation, then refine. My publications (e.g. VIS, NAACL) reflect an emphasis on method transparency, reproducibility, and user impact—values that resonate with Amazon’s customer obsession.",
+          "I’m especially interested in (1) leveraging narrative / causal structure features as auxiliary signals for recommender relevance or diversification, and (2) probing how LLM-generated summaries or rationales might improve user trust without degrading latency. I’d love to explore these directions with your team.",
+          "I bring strong fundamentals (feature engineering, model evaluation, statistical testing) plus a collaborative mindset. I’m comfortable diving into large datasets, iterating quickly, and communicating findings to both research and engineering stakeholders.",
+          "Thank you for considering my application—happy to provide code samples, a brief research statement, or discuss potential experiment ideas tailored to your team’s roadmap."
+        ],
+        "closing": "Best regards,",
+        "signature": "Frank"
+      },
+      "content_config": {
+        "include_cover_letter": true,
+        "selected_skills": [
+          "data_science_ai",
+          "big_data_engineering",
+          "research_evaluation",
+          "data_analysis"
+        ],
+        "sections_order": [
+          "summary",
+          "technical_skills",
+          "projects",
+          "phd_research",
+          "publications",
+          "work_experience",
+          "education"
+        ],
+        "projects_limit": 3,
+        "include_projects": [
+          "causal-network-viz",
+          "perspectiva-tool",
+          "data-storytelling-cases"
+        ]
+      },
+      "content_overrides": {
+        "project_descriptions": {
+          "causal-network-viz": "Causal / relational network exploration combining NLP extraction and graph analytics—analogous to feature discovery + structural reasoning in recommender contexts.",
+          "perspectiva-tool": "Collaborative causal modelling platform—experience structuring multi-stakeholder knowledge graphs relevant to interpretability and hypothesis generation.",
+          "data-storytelling-cases": "Narrative visualization studies integrating topic modeling, sentiment analysis, and evaluation—experience aligning ranking / summarization output with user understanding."
+        }
+      }
+    }
+  }
+}

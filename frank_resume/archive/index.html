@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="page-size" content="A4" />
+  <meta name="print-scale" content="1.0" />
+
+  <!-- SEO Meta Tags -->
+  <title>Frankie Résumé - The Multi-Version Resume | Songhai Fan (Frank)</title>
+  <meta name="description"
+    content="Dynamic, multi-version resume builder that adapts to different roles and industries. Create tailored resumes with ease using Frankie Résumé." />
+  <meta name="keywords"
+    content="resume, CV, multi-version, dynamic resume, portfolio, Songhai Fan, Frankie Fan, data scientist, developer" />
+  <meta name="author" content="Songhai Fan (Frankie)" />
+
+  <!-- Open Graph Meta Tags -->
+  <meta property="og:title" content="Frankie Résumé - The Multi-Version Resume" />
+  <meta property="og:description"
+    content="Dynamic, multi-version resume builder that adapts to different roles and industries." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://songhaifan.github.io/persona/" />
+  <meta property="og:image" content="https://songhaifan.github.io/persona/logo.svg" />
+  <meta property="og:site_name" content="Frankie Résumé" />
+
+  <!-- Twitter Card Meta Tags -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Frankie Résumé - The Multi-Version Resume" />
+  <meta name="twitter:description"
+    content="Dynamic, multi-version resume builder that adapts to different roles and industries." />
+  <meta name="twitter:image" content="https://songhaifan.github.io/persona/logo.svg" />
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="logo.svg" />
+  <link rel="alternate icon" href="favicon.ico" />
+
+  <!-- Theme Color -->
+  <meta name="theme-color" content="#1e1e1e" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/inter/3.19.3/inter.css" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nothing+You+Could+Do&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet" />
+  <link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/github-fork-ribbon-css/0.2.3/gh-fork-ribbon.min.css" />
+  <link href="main.css" rel="stylesheet" />
+  <script src="main.js" defer></script>
+</head>
+
+<body class="loading">
+
+  <!-- GitHub Fork Ribbon -->
+  <a class="github-fork-ribbon right-bottom" href="https://github.com/SonghaiFan/persona"
+    data-ribbon="Fork me on GitHub" title="Fork me on GitHub">Fork me on GitHub</a>
+
+  <!-- Header Section -->
+  <header class="app-header">
+    <div class="app-header-content">
+      <div class="app-branding">
+        <div class="brand-logo-container">
+          <h1 class="brand-logo-text">Frankie</h1>
+          <p class="brand-text">Résumé</p>
+        </div>
+
+      </div>
+
+      <div class="app-controls">
+        <!-- Version Switcher -->
+        <div class="md-form-field">
+          <div class="md-select-wrapper">
+            <select id="versionSelect" class="md-select">
+              <!-- Populated dynamically -->
+            </select>
+            <span class="md-arrow">&#9662;</span>
+          </div>
+        </div>
+
+        <!-- Cover Letter Toggle -->
+        <div class="md-form-field">
+          <label class="cover-letter-toggle">
+            <input type="checkbox" id="coverLetterToggle" class="toggle-checkbox">
+            <span class="toggle-label">Include Cover Letter</span>
+          </label>
+        </div>
+
+
+
+      </div>
+    </div>
+  </header>
+
+  <!-- Loading Indicator -->
+  <div class="loading-indicator">
+    <div class="loading-spinner"></div>
+    <span>Loading resume...</span>
+  </div>
+
+  <!-- Main Content Area -->
+  <div id="resume">
+    <section class="page">
+      <!-- Content will be rendered here and auto-paginated -->
+    </section>
+  </div>
+</body>
+
+</html>
