@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { motion, AnimatePresence, LayoutGroup } from 'motion/react';
 import { Users } from 'lucide-react';
 import { QRCodeCanvas } from 'qrcode.react';
@@ -29,13 +29,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useAppDataStore } from '@/stores/app-data-store';
 import { useUIStore } from '@/stores/ui-store';
 
-interface ConfettiHandle {
-  spawn: (x: number, y: number) => void;
-}
-
 export default function App() {
-  const confettiRef = useRef<ConfettiHandle | null>(null);
-  const paperRef = useRef<HTMLDivElement>(null);
   const {
     addItem: addItemToData,
     appendEmptyPage: appendEmptyPageInData,
@@ -100,7 +94,6 @@ export default function App() {
   } = useUIStore();
 
   const isWorkspaceFlow = flow === 'workspace' || flow === 'compare-review';
-  const isGalleryFlow = flow === 'gallery';
   const isCompareReviewFlow = flow === 'compare-review';
   const isCompareResultFlow = flow === 'compare-result';
   const isEditingFlow = flow === 'workspace' || flow === 'gallery';
@@ -155,29 +148,12 @@ export default function App() {
   }, [groups, myTicks, pruneBoundPages]);
 
   const toggleTick = (itemId: string, e?: React.MouseEvent | React.ChangeEvent) => {
-    const { isChecking, pageKeyToBind } = toggleTickInStore({ activeGroupId, itemId });
+    const { pageKeyToBind } = toggleTickInStore({ activeGroupId, itemId });
 
     if (pageKeyToBind) {
       window.setTimeout(() => {
         useAppDataStore.getState().bindPage(pageKeyToBind);
       }, 800);
-    }
-
-    if (isChecking && e && confettiRef.current && paperRef.current) {
-      let x;
-      let y;
-      if ('clientX' in e && (e as React.MouseEvent).clientX !== undefined) {
-        x = (e as React.MouseEvent).clientX;
-        y = (e as React.MouseEvent).clientY;
-      } else {
-        const targetRect = (e.target as HTMLElement).getBoundingClientRect();
-        x = targetRect.left + targetRect.width / 2;
-        y = targetRect.top + targetRect.height / 2;
-      }
-
-      if (!isNaN(x) && !isNaN(y)) {
-        confettiRef.current.spawn(x, y);
-      }
     }
   };
 
@@ -324,7 +300,6 @@ export default function App() {
                       flow={flow}
                       newItemText={newItemText}
                       pageSize={PAGE_SIZE}
-                      paperRef={paperRef}
                       ticks={myTicks}
                       onAddItem={addItem}
                       onAppendPage={appendEmptyPage}

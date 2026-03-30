@@ -71,7 +71,3 @@ export interface ImportedGroupPayload {
   group: Group;
   sharedTicks: Record<string, boolean>;
 }
-
-export interface ConfettiHandle {
-  spawn: (x: number, y: number) => void;
-}

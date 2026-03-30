@@ -10,7 +10,6 @@ interface GroupWorkspaceProps {
   flow: UIFlow;
   newItemText: string;
   pageSize: number;
-  paperRef: React.RefObject<HTMLDivElement | null>;
   ticks: Record<string, boolean>;
   onBindPage: (pageKey: string) => void;
   onAppendPage: () => void;
@@ -26,7 +25,6 @@ export function GroupWorkspace({
   flow,
   newItemText,
   pageSize,
-  paperRef,
   ticks,
   onBindPage,
   onAppendPage,
@@ -57,7 +55,6 @@ export function GroupWorkspace({
       <div
           key={`group-${activeGroup.id}`}
           className="space-y-5"
-          ref={paperRef}
         >
           {isCompareReviewFlow && (
             <div className="list-text rounded-xl border border-klein/10 bg-klein/3 px-5 py-4 font-bold text-klein shadow-[0_18px_40px_rgba(0,47,167,0.05)]">
