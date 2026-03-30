@@ -10,7 +10,7 @@ export default function App() {
 
   return (
     <div
-      className={`min-h-screen p-4 md:p-10 flex flex-col items-center transition-colors ${
+      className={`min-h-screen p-3 md:p-10 flex flex-col items-center transition-colors ${
         vm.isWorkspaceFlow ? 'cursor-zoom-out' : ''
       }`}
       onClick={() => {
