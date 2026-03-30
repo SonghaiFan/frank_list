@@ -13,10 +13,10 @@ export const isLocale = (value: unknown): value is Locale => value === 'zh' || v
 
 const translations: Record<Locale, Record<string, TranslationValue>> = {
   zh: {
-    'brand.name': 'Rams Life',
+    'brand.name': "Frank's Life List",
     'brand.workspace': 'v2.0 / Workspace',
     'brand.comparison': 'v2.0 / Comparison',
-    'brand.signature': 'RAMS-NOTEBOOK HYBRID / v2.0',
+    'brand.signature': "FRANK'S LIFE LIST / v2.0",
     'common.cancel': '取消',
     'common.confirm': '确认',
     'common.languageToggle': 'EN',
@@ -42,7 +42,7 @@ const translations: Record<Locale, Record<string, TranslationValue>> = {
     'origin.externalWithOwner': translationFactory('外部导入 · {ownerId}'),
     'origin.default': '默认项目',
     'card.cover.defaultTitle': 'Notebook',
-    'card.cover.subtitle': 'Frank List',
+    'card.cover.subtitle': "Frank's Life List",
     'card.end.label': '列表结束',
     'notebook.previousPage': '上一页',
     'notebook.nextPage': '下一页',
@@ -70,10 +70,10 @@ const translations: Record<Locale, Record<string, TranslationValue>> = {
     'generated.importedGroupTitle': '导入页',
   },
   en: {
-    'brand.name': 'Rams Life',
+    'brand.name': "Frank's Life List",
     'brand.workspace': 'v2.0 / Workspace',
     'brand.comparison': 'v2.0 / Comparison',
-    'brand.signature': 'RAMS-NOTEBOOK HYBRID / v2.0',
+    'brand.signature': "FRANK'S LIFE LIST / v2.0",
     'common.cancel': 'Cancel',
     'common.confirm': 'Confirm',
     'common.languageToggle': '中文',
@@ -99,7 +99,7 @@ const translations: Record<Locale, Record<string, TranslationValue>> = {
     'origin.externalWithOwner': translationFactory('Imported · {ownerId}'),
     'origin.default': 'Default item',
     'card.cover.defaultTitle': 'Notebook',
-    'card.cover.subtitle': 'Frank List',
+    'card.cover.subtitle': "Frank's Life List",
     'card.end.label': 'End of List',
     'notebook.previousPage': 'Previous page',
     'notebook.nextPage': 'Next page',
