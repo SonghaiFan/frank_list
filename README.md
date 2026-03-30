@@ -4,7 +4,7 @@
 
 Frank's Life List 是一个私密、可分享的 life target list，用来记录你想完成、想经历、想购买、想实现的事情。
 
-它是 Frank 系列作品的一部分：一个轻量的 web app，无需注册，数据保留在本地设备里，并且让分享列表这件事变得很简单。你可以把它当作人生清单、to-do list、grocery list，或者和朋友一起使用的共享 checklist。
+它是 Frank 系列作品的一部分：一个轻量的 web app，无需注册，数据保留在本地设备里，并且让分享列表这件事变得很简单。它尤其适合那些需要和另一个人对齐 list 的时刻。情侣可以一起打卡 100 件事情，多人可以一起对齐购物清单，当然它也可以作为一个很好用的长期 target tracker，或者日常的 to-do list。
 
 ### 为什么做它
 
@@ -25,6 +25,23 @@ Frank's Life List 是一个私密、可分享的 life target list，用来记录
 - **异步同步流程**：你可以把某一组 list 分享给朋友，在不依赖实时后端的情况下进行对齐和对比。
 - **简单分享**：支持分享链接和二维码，便于轻量协作。
 - **用途灵活**：既适合做 life list，也适合 bucket list、to-do list、checklist 或 grocery list。
+
+### 使用场景
+
+- 和另一个人对齐同一份 list 的时刻
+- 情侣一起打卡 100 件想做的事情
+- 家人、室友或朋友一起对齐 grocery list
+- 给自己长期记录人生目标和阶段性计划
+- 作为日常 to-do list 持续使用
+
+### 交互理解
+
+我对交互的理解是简单直觉。
+
+- 不先给用户复杂规则，而是让人一打开就知道怎么开始
+- 不依赖注册、账号体系或冗长设置来制造门槛
+- 分享、同步、对齐都尽量轻量，减少操作负担
+- 让 list 本身成为主角，而不是让界面打扰记录和比较
 
 ### 适合谁
 
@@ -69,7 +86,7 @@ npm run build
 
 Frank's Life List is a private, shareable life target list for capturing the things you want to do, finish, buy, or experience.
 
-It is designed as part of the Frank's series: a lightweight web app that works without signup, keeps data on-device, and makes list sharing feel simple. You can use it as a life goals list, a to-do list, a grocery list, or a shared checklist with friends.
+It is designed as part of the Frank's series: a lightweight web app that works without signup, keeps data on-device, and makes list sharing feel simple. It is especially useful in moments when two people need to align around the same list. Couples can track 100 things they want to do together, groups can coordinate grocery lists, and it also works well as a personal long-term target tracker or an everyday to-do list.
 
 ### Why It Exists
 
@@ -90,6 +107,23 @@ Most list apps ask you to create an account, push everything to the cloud, and t
 - **Async sync flow**: Share a list or checklist with a friend and compare progress without needing a real-time backend.
 - **Simple sharing**: Supports share links and QR-based handoff for lightweight collaboration.
 - **Flexible list types**: Works well as a life list, bucket list, to-do list, checklist, or grocery list.
+
+### Use Cases
+
+- Moments when two people need to align on the same list
+- Couples tracking 100 things they want to do together
+- Friends, family, or housemates coordinating a grocery list
+- Personal long-term target tracking
+- Everyday to-do list management
+
+### Interaction Philosophy
+
+My approach to interaction design is simple and intuitive.
+
+- People should understand how to start as soon as they open the app
+- No registration, account system, or setup flow should get in the way
+- Sharing, syncing, and aligning should feel lightweight
+- The list itself should stay at the center, not the interface
 
 ### Positioning
 
