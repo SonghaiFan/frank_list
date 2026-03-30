@@ -188,7 +188,7 @@ export const useAppViewModel = () => {
     const next = resetToDefaultState();
     clearShareQueryFromUrl();
     appActions.resetData(next);
-    uiActions.hydrate({ activeGroupId: next.activeGroupId, flow: 'workspace' });
+    uiActions.hydrate({ activeGroupId: next.activeGroupId, flow: 'gallery' });
     uiActions.closeOverlay();
     uiActions.setNewItemText('');
   };

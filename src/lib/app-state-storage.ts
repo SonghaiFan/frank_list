@@ -16,7 +16,7 @@ export interface LoadedAppState {
   localId: string;
   persistedState: PersistedAppState;
   sharedTicks: Record<string, boolean>;
-  initialFlow: 'workspace' | 'compare-review';
+  initialFlow: 'gallery' | 'compare-review';
 }
 
 type PersistInputState = Omit<PersistedAppState, 'v'>;
@@ -50,7 +50,7 @@ export const loadAppState = async (): Promise<LoadedAppState> => {
       localId,
       persistedState,
       sharedTicks: {},
-      initialFlow: 'workspace',
+      initialFlow: 'gallery',
     };
   }
 
@@ -60,7 +60,7 @@ export const loadAppState = async (): Promise<LoadedAppState> => {
       localId,
       persistedState,
       sharedTicks: {},
-      initialFlow: 'workspace',
+      initialFlow: 'gallery',
     };
   }
 

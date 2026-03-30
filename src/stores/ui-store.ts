@@ -35,7 +35,7 @@ interface UIState {
 export const useUIStore = create<UIState>()(persist((set) => ({
   activeGroupId: DEFAULT_GROUP_ID,
   copySuccess: false,
-  flow: 'workspace',
+  flow: 'gallery',
   locale: getPreferredLocale(),
   newItemText: '',
   overlay: 'none',
@@ -43,7 +43,7 @@ export const useUIStore = create<UIState>()(persist((set) => ({
   clearCopySuccess: () => set({ copySuccess: false }),
   closeOverlay: () => set({ overlay: 'none' }),
   closeToGallery: () => set({ flow: 'gallery' }),
-  hydrate: ({ activeGroupId, flow = 'workspace' }) => set({ activeGroupId, flow }),
+  hydrate: ({ activeGroupId, flow = 'gallery' }) => set({ activeGroupId, flow }),
   openGroupFromGallery: (groupId) => set({ activeGroupId: groupId, flow: 'workspace' }),
   selectGroup: (groupId) => set({ activeGroupId: groupId, flow: 'workspace' }),
   setCopySuccess: (value) => set({ copySuccess: value }),

@@ -93,6 +93,7 @@ export function AppMainContent({
                     className="w-full max-w-[800px] cursor-default"
                   >
                     <MobileGroupList
+                      flow={flow}
                       group={activeGroup}
                       newItemText={newItemText}
                       ticks={ticks}
