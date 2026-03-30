@@ -27,7 +27,7 @@ interface AppDataState {
   appendEmptyPage: (activeGroupId: string) => void;
   bindPage: (pageKey: string) => void;
   clearSharedTicks: () => void;
-  createGroup: () => Group;
+  createGroup: (title: string) => Group;
   deleteGroup: (activeGroupId: string) => string | null;
   hydrateData: (loaded: LoadedAppState) => void;
   pruneBoundPages: () => void;
@@ -95,11 +95,11 @@ export const useAppDataStore = create<AppDataState>((set, get) => ({
     boundPages: { ...state.boundPages, [pageKey]: true },
   })),
   clearSharedTicks: () => set({ sharedTicks: {} }),
-  createGroup: () => {
+  createGroup: (title) => {
     const { groups, myId, nextGroupId } = get();
     const group: Group = {
       id: createOwnedId(myId, nextGroupId),
-      title: `第 ${groups.length + 1} 组`,
+      title,
       items: [],
     };
     set({

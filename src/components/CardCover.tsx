@@ -1,6 +1,7 @@
 import React, { forwardRef } from 'react';
 import { motion } from 'motion/react';
 import { cn } from '@/lib/cn';
+import { useI18n } from '@/hooks/useI18n';
 import { PAGE_CARD_HEIGHT_PX, PAGE_CARD_WIDTH_PX } from '@/lib/workspace-constants';
 
 interface CardCoverProps {
@@ -14,8 +15,9 @@ export const CardCover = forwardRef<HTMLDivElement, CardCoverProps>(({
   className,
   isActive = true,
   layoutId,
-  title = 'Notebook',
+  title,
 }, ref) => {
+  const { t } = useI18n();
   return (
     <motion.div
       ref={ref}
@@ -30,9 +32,9 @@ export const CardCover = forwardRef<HTMLDivElement, CardCoverProps>(({
     >
       <div className="absolute inset-0 opacity-10 pointer-events-none bg-linear-to-bl from-black/5 to-transparent" />
       <div className="relative z-10 px-12">
-        <h1 className="text-4xl font-bold text-klein/90 mb-4 tracking-tight">{title}</h1>
+        <h1 className="text-4xl font-bold text-klein/90 mb-4 tracking-tight">{title ?? t('card.cover.defaultTitle')}</h1>
         <p className="text-neutral-400 font-mono text-sm uppercase tracking-widest">
-          Frank List
+          {t('card.cover.subtitle')}
         </p>
       </div>
     </motion.div>

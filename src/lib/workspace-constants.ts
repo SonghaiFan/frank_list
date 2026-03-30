@@ -6,7 +6,6 @@ export const PAGE_CARD_HEIGHT_PX = (PAGE_ITEM_CAPACITY + 4) * PAGE_LINE_HEIGHT_P
 export const PAGE_CARD_WIDTH_PX = 550;
 
 export const DEFAULT_GROUP_ID = '0';
-export const DEFAULT_GROUP_TITLE = '人生清单100项';
 export const PAGE_SIZE = PAGE_ITEM_CAPACITY;
 export const LOCAL_STATE_STORAGE_KEY = 'rams-life-state';
 

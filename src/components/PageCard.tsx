@@ -4,6 +4,7 @@ import { Plus, X } from 'lucide-react';
 import type { AppMode, GroupPage } from '@/lib/notebook-types';
 import { cn } from '@/lib/cn';
 import { getMarkerStyle, getOriginDotClassName, getOriginLabel } from '@/lib/notebook-ui';
+import { useI18n } from '@/hooks/useI18n';
 import { PAGE_CARD_HEIGHT_PX, PAGE_CARD_WIDTH_PX } from '@/lib/workspace-constants';
 
 interface PageCardProps {
@@ -35,6 +36,7 @@ export function PageCard({
   onRemoveItem,
   onToggleTick,
 }: PageCardProps) {
+  const { locale, t } = useI18n();
   const cardRef = React.useRef<HTMLDivElement>(null);
 
   return (
@@ -59,15 +61,15 @@ export function PageCard({
           <div className="mb-px flex items-center gap-3">
             {page.isBound ? (
               <motion.span className="text-klein text-xs font-medium tracking-wide opacity-60" layout="position">
-                已归档
+                {t('page.status.bound')}
               </motion.span>
             ) : page.isComplete ? (
               <motion.span className="text-klein text-xs font-medium tracking-wide" layout="position">
-                已完成
+                {t('page.status.complete')}
               </motion.span>
             ) : (
               <span className="text-xs font-medium tracking-wide text-neutral-300">
-                待完成
+                {t('page.status.pending')}
               </span>
             )}
           </div>
@@ -109,7 +111,7 @@ export function PageCard({
                     {item.origin.type !== 'default' && (
                       <span
                         className={cn('h-1.5 w-1.5 shrink-0 rounded-full', getOriginDotClassName(item.origin))}
-                        title={getOriginLabel(item.origin)}
+                        title={getOriginLabel(item.origin, locale)}
                       />
                     )}
                   </label>
@@ -135,7 +137,7 @@ export function PageCard({
                 value={newItemText}
                 onChange={(e) => onItemTextChange?.(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && onAddItem?.()}
-                placeholder={`给「${page.groupTitle}」添加新项目...`}
+                placeholder={t('page.addItemPlaceholder', { title: page.groupTitle })}
                 className="list-text on-lines h-full flex-1 border-none bg-transparent outline-none placeholder:text-neutral-200"
               />
             </div>

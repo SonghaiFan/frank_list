@@ -1,6 +1,7 @@
 import React, { forwardRef } from 'react';
 import { motion } from 'motion/react';
 import { cn } from '@/lib/cn';
+import { useI18n } from '@/hooks/useI18n';
 import { PAGE_CARD_HEIGHT_PX, PAGE_CARD_WIDTH_PX } from '@/lib/workspace-constants';
 
 interface CardEndProps {
@@ -14,6 +15,7 @@ export const CardEnd = forwardRef<HTMLDivElement, CardEndProps>(({
   isActive = true,
   layoutId,
 }, ref) => {
+  const { t } = useI18n();
   return (
     <motion.div
       ref={ref}
@@ -29,7 +31,7 @@ export const CardEnd = forwardRef<HTMLDivElement, CardEndProps>(({
       <div className="absolute inset-0 opacity-10 pointer-events-none bg-linear-to-bl from-transparent to-black/5" />
       <div className="relative z-10 px-12 opacity-40">
         <p className="text-neutral-400 font-mono text-xs uppercase tracking-widest">
-          End of List
+          {t('card.end.label')}
         </p>
       </div>
     </motion.div>

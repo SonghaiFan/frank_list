@@ -8,6 +8,7 @@ import {
   parseSharedPayload,
   randomId,
 } from '@/lib/notebook-utils';
+import { getPreferredLocale } from '@/lib/i18n';
 import { LOCAL_STATE_STORAGE_KEY } from '@/lib/workspace-constants';
 import type { Group, PersistedAppState } from '@/lib/notebook-types';
 
@@ -32,12 +33,13 @@ export const ensureLocalUserId = () => {
 };
 
 export const loadAppState = async (): Promise<LoadedAppState> => {
+  const locale = getPreferredLocale();
   const localId = ensureLocalUserId();
-  let persistedState = createDefaultState();
+  let persistedState = createDefaultState(locale);
 
   const savedState = localStorage.getItem(LOCAL_STATE_STORAGE_KEY);
   if (savedState) {
-    const decrypted = await decryptState(savedState, localId);
+    const decrypted = await decryptState(savedState, localId, locale);
     if (decrypted) persistedState = decrypted;
   }
 
@@ -52,7 +54,7 @@ export const loadAppState = async (): Promise<LoadedAppState> => {
     };
   }
 
-  const imported = parseSharedPayload(key);
+  const imported = parseSharedPayload(key, locale);
   if (!imported) {
     return {
       localId,
@@ -75,7 +77,7 @@ export const loadAppState = async (): Promise<LoadedAppState> => {
 };
 
 export const persistAppState = async (state: PersistInputState, userId: string) => {
-  const encrypted = await encryptState(normalizeState(state), userId);
+  const encrypted = await encryptState(normalizeState(state, getPreferredLocale()), userId);
   localStorage.setItem(LOCAL_STATE_STORAGE_KEY, encrypted);
 };
 
@@ -88,4 +90,8 @@ export const createGroupShareUrl = (group: Group, ticks: Record<string, boolean>
   const url = new URL(window.location.href);
   url.searchParams.set('key', encoded);
   return url.toString();
+};
+
+export const clearShareQueryFromUrl = () => {
+  window.history.replaceState({}, '', window.location.pathname);
 };

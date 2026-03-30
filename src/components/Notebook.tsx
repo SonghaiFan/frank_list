@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { motion } from 'motion/react';
 import { cn } from '@/lib/cn';
 import type { GroupPage } from '@/lib/notebook-types';
+import { useI18n } from '@/hooks/useI18n';
 import { PAGE_CARD_HEIGHT_PX, PAGE_CARD_WIDTH_PX, PAGE_ITEM_CAPACITY, PAGE_LINE_HEIGHT_PX } from '@/lib/workspace-constants';
 import { PageCard } from '@/components/PageCard';
 import { CardCover } from '@/components/CardCover';
@@ -56,12 +57,13 @@ export function Notebook({
   onRemoveItem,
   onToggleTick,
 }: NotebookProps) {
+  const { t } = useI18n();
   const allPages = useMemo(() => {
     const coverPage: GroupPage = {
       key: `notebook-cover-${id}`,
       type: 'cover',
       groupId: 'system',
-      groupTitle: 'Cover',
+      groupTitle: '__cover__',
       pageIndex: -1,
       items: [],
       isComplete: true,
@@ -72,7 +74,7 @@ export function Notebook({
       key: `notebook-end-${id}`,
       type: 'end',
       groupId: 'system',
-      groupTitle: 'End',
+      groupTitle: '__end__',
       pageIndex: -2,
       items: [],
       isComplete: true,
@@ -178,7 +180,7 @@ export function Notebook({
                 disabled={!canGoPrev}
                 className="absolute left-4 z-50 flex h-12 w-12 items-center justify-center rounded-full border border-neutral-200 bg-white/80 text-[#666] shadow-[0_8px_16px_rgba(0,0,0,0.06)] backdrop-blur-sm transition-all hover:-translate-y-px hover:border-klein hover:text-klein disabled:cursor-not-allowed disabled:opacity-35"
                 style={{ top: `${(PAGE_CARD_HEIGHT_PX / 2) - 24}px` }}
-                title="Previous page"
+                title={t('notebook.previousPage')}
               >
                 <ArrowLeft size={20} />
               </button>
@@ -188,7 +190,7 @@ export function Notebook({
                 disabled={!canGoNext}
                 className="absolute right-4 z-50 flex h-12 w-12 items-center justify-center rounded-full border border-neutral-200 bg-white/80 text-[#666] shadow-[0_8px_16px_rgba(0,0,0,0.06)] backdrop-blur-sm transition-all hover:-translate-y-px hover:border-klein hover:text-klein disabled:cursor-not-allowed disabled:opacity-35"
                 style={{ top: `${(PAGE_CARD_HEIGHT_PX / 2) - 24}px` }}
-                title="Next page"
+                title={t('notebook.nextPage')}
               >
                 <ArrowRight size={20} />
               </button>
@@ -340,18 +342,18 @@ export function Notebook({
                       <div className="flex h-full flex-col justify-between px-12 py-10 text-neutral-400">
                         {page.type === 'cover' ? (
                             <div className="flex flex-col h-full justify-center items-center">
-                                <div className="text-neutral-300 font-mono text-sm">INDEX</div>
+                                <div className="text-neutral-300 font-mono text-sm">{t('notebook.index')}</div>
                             </div>
                         ) : page.type === 'end' ? (
                             <div className="flex flex-col h-full justify-center items-center">
-                                <div className="text-neutral-300 font-mono text-xs">BACK COVER</div>
+                                <div className="text-neutral-300 font-mono text-xs">{t('notebook.backCover')}</div>
                             </div>
                         ) : (
                            <>
                             <div>
-                                <div className="ui-label">Back</div>
+                                <div className="ui-label">{t('notebook.backLabel')}</div>
                                 <div className="list-text mt-3 text-neutral-500">
-                                    {page.groupTitle} · 第 {page.pageIndex + 1} 页
+                                    {t('notebook.pageMeta', { title: page.groupTitle, page: page.pageIndex + 1 })}
                                 </div>
                             </div>
                             <div className="ui-mono opacity-55">

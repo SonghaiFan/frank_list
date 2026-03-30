@@ -1,6 +1,7 @@
 import { Plus } from 'lucide-react';
 import type { AppMode, Group } from '@/lib/notebook-types';
 import { cn } from '@/lib/cn';
+import { useI18n } from '@/hooks/useI18n';
 
 interface GroupTabsProps {
   activeGroupId: string;
@@ -17,6 +18,7 @@ export function GroupTabs({
   onCreateGroup,
   onSelectGroup,
 }: GroupTabsProps) {
+  const { t } = useI18n();
   return (
     <div className="mb-3 px-2">
       <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
@@ -41,11 +43,11 @@ export function GroupTabs({
             className="shrink-0 rounded-full border border-dashed border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-500 transition-all hover:border-klein hover:text-klein flex items-center gap-2"
           >
             <Plus size={14} />
-            新建一组
+            {t('groupTabs.newGroup')}
           </button>
         )}
       </div>
-      <div className="ui-mono px-1 opacity-45">当前组 ID: {activeGroupId}</div>
+      <div className="ui-mono px-1 opacity-45">{t('groupTabs.currentGroupId', { id: activeGroupId })}</div>
     </div>
   );
 }

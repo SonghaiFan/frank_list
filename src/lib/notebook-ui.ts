@@ -1,5 +1,7 @@
 import type React from 'react';
+import type { Locale } from '@/lib/i18n';
 import type { ItemOrigin } from '@/lib/notebook-types';
+import { translate } from '@/lib/i18n';
 
 const getHashFromString = (value: string) => {
   let hash = 0;
@@ -40,14 +42,16 @@ export const getOriginDotClassName = (origin: ItemOrigin) => {
   }
 };
 
-export const getOriginLabel = (origin: ItemOrigin) => {
+export const getOriginLabel = (origin: ItemOrigin, locale: Locale) => {
   switch (origin.type) {
     case 'self':
-      return '自己添加';
+      return translate(locale, 'origin.self');
     case 'external':
-      return origin.ownerId ? `外部导入 · ${origin.ownerId}` : '外部导入';
+      return origin.ownerId
+        ? translate(locale, 'origin.externalWithOwner', { ownerId: origin.ownerId })
+        : translate(locale, 'origin.external');
     case 'default':
     default:
-      return '默认项目';
+      return translate(locale, 'origin.default');
   }
 };

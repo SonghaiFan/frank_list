@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import type { Group, GroupPage } from '@/lib/notebook-types';
 import type { UIFlow } from '@/stores/ui-store';
 import { CardStack } from '@/components/CardStack';
+import { useI18n } from '@/hooks/useI18n';
 
 interface GroupWorkspaceProps {
   activeGroup: Group;
@@ -33,6 +34,7 @@ export function GroupWorkspace({
   onToggleTick,
   onAddItem,
 }: GroupWorkspaceProps) {
+  const { t } = useI18n();
   const isCompareReviewFlow = flow === 'compare-review';
   const cardMode = isCompareReviewFlow ? 'compare-step-1' : 'edit';
 
@@ -58,7 +60,7 @@ export function GroupWorkspace({
         >
           {isCompareReviewFlow && (
             <div className="list-text rounded-xl border border-klein/10 bg-klein/3 px-5 py-4 font-bold text-klein shadow-[0_18px_40px_rgba(0,47,167,0.05)]">
-              收到这一组的同步请求：请在下面逐页勾选你的进度，完成后可以进入对比。
+              {t('workspace.compareNotice')}
             </div>
           )}
 

@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowLeft, Check, Menu, QrCode, RotateCcw, Share2 } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { useI18n } from '@/hooks/useI18n';
 import type { UIFlow } from '@/stores/ui-store';
 
 interface AppHeaderProps {
@@ -11,8 +12,6 @@ interface AppHeaderProps {
   onReset: () => void;
   onShowQrCode: () => void;
   onTogglePrimaryView?: () => void;
-  isDetailView?: boolean;
-  onBackToGrid?: () => void;
 }
 
 export function AppHeader({
@@ -23,9 +22,8 @@ export function AppHeader({
   onReset,
   onShowQrCode,
   onTogglePrimaryView,
-  isDetailView,
-  onBackToGrid,
 }: AppHeaderProps) {
+  const { t, toggleLocale } = useI18n();
   const circleButtonClass =
     'flex h-10 w-10 items-center justify-center rounded-full border border-neutral-200 bg-white text-[#666] transition-all hover:-translate-y-px hover:border-klein hover:text-klein cursor-pointer';
   const isGalleryFlow = flow === 'gallery';
@@ -35,15 +33,10 @@ export function AppHeader({
   return (
     <nav className="mb-5 flex items-center justify-between px-2 w-full">
       <div className="flex items-center gap-4">
-        {isDetailView && (
-             <button onClick={onBackToGrid} className={circleButtonClass} title="Back to Library">
-                <ArrowLeft size={18} />
-             </button>
-        )}
         <div className="flex flex-col">
-            <span className="ui-label text-base font-bold">Rams Life</span>
+            <span className="ui-label text-base font-bold">{t('brand.name')}</span>
             <span className="ui-mono uppercase tracking-tighter text-xs opacity-50">
-            {isEditingFlow ? 'v2.0 / Workspace' : 'v2.0 / Comparison'}
+            {isEditingFlow ? t('brand.workspace') : t('brand.comparison')}
             </span>
         </div>
       </div>
@@ -55,24 +48,24 @@ export function AppHeader({
             circleButtonClass,
             isGalleryFlow && 'border-transparent bg-klein text-white hover:bg-klein hover:text-white'
           )}
-          title={isGalleryFlow ? 'Open stack view' : 'Close into notebook'}
+          title={isGalleryFlow ? t('header.openStackView') : t('header.closeIntoNotebook')}
         >
           <Menu size={18} />
         </button>
 
         {isComparisonFlow && (
-          <button onClick={onBack} className={circleButtonClass} title="Back to Edit">
+          <button onClick={onBack} className={circleButtonClass} title={t('header.backToEdit')}>
             <ArrowLeft size={18} />
           </button>
         )}
 
         {isEditingFlow && (
-          <button onClick={onReset} className={cn(circleButtonClass, 'text-neutral-300')} title="Reset to Default">
+          <button onClick={onReset} className={cn(circleButtonClass, 'text-neutral-300')} title={t('header.reset')}>
             <RotateCcw size={18} />
           </button>
         )}
         {isEditingFlow && (
-          <button onClick={onShowQrCode} className={circleButtonClass} title="QR Code">
+          <button onClick={onShowQrCode} className={circleButtonClass} title={t('header.qrCode')}>
             <QrCode size={18} />
           </button>
         )}
@@ -83,11 +76,14 @@ export function AppHeader({
               circleButtonClass,
               copySuccess && 'border-transparent bg-klein text-white hover:bg-klein hover:text-white'
             )}
-            title="Share Link"
+            title={t('header.shareLink')}
           >
             {copySuccess ? <Check size={18} /> : <Share2 size={18} />}
           </button>
         )}
+        <button onClick={toggleLocale} className={circleButtonClass} title={t('common.languageToggle')}>
+          <span className="ui-mono text-xs">{t('common.languageToggle')}</span>
+        </button>
       </div>
     </nav>
   );

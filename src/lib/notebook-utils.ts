@@ -2,7 +2,6 @@ import LZString from 'lz-string';
 import {
   BIT_ALPHABET,
   DEFAULT_GROUP_ID,
-  DEFAULT_GROUP_TITLE,
   DEFAULT_ITEMS,
   ESCAPE_CHAR,
   GROUP_FIELD_SEP,
@@ -14,6 +13,12 @@ import {
   PAGE_SIZE,
   TOP_SEP,
 } from '@/lib/workspace-constants';
+import {
+  getDefaultGroupTitle,
+  getGeneratedPageTitle,
+  getImportedGroupTitle,
+} from '@/lib/notebook-labels';
+import type { Locale } from '@/lib/i18n';
 import type {
   CompactLocalGroup,
   CompactLocalItem,
@@ -111,15 +116,15 @@ export const splitEscaped = (value: string, separator: string) => {
   return parts;
 };
 
-export const createDefaultGroup = (): Group => ({
+export const createDefaultGroup = (locale?: Locale): Group => ({
   id: DEFAULT_GROUP_ID,
-  title: DEFAULT_GROUP_TITLE,
+  title: getDefaultGroupTitle(locale),
   items: DEFAULT_ITEM_RECORDS.map((item) => ({ ...item, origin: { ...item.origin } })),
 });
 
-export const createDefaultState = (): PersistedAppState => ({
+export const createDefaultState = (locale?: Locale): PersistedAppState => ({
   v: 6,
-  groups: [createDefaultGroup()],
+  groups: [createDefaultGroup(locale)],
   ticks: {},
   boundPages: {},
   extraPageCounts: {},
@@ -170,14 +175,16 @@ export const normalizeItems = (items: Array<ListItem | { id?: string; text: stri
   });
 };
 
-export const normalizeState = (state?: Partial<PersistedAppState>): PersistedAppState => {
-  const fallback = createDefaultState();
+export const normalizeState = (state?: Partial<PersistedAppState>, locale?: Locale): PersistedAppState => {
+  const fallback = createDefaultState(locale);
   const groups = Array.isArray(state?.groups) && state?.groups.length > 0
     ? state!.groups.map((group, index) => {
         const groupId = group.id || randomId(6);
         return {
           id: groupId,
-          title: groupId === DEFAULT_GROUP_ID ? DEFAULT_GROUP_TITLE : (group.title || `第 ${index + 1} 页`),
+          title: groupId === DEFAULT_GROUP_ID
+            ? getDefaultGroupTitle(locale)
+            : (group.title || getGeneratedPageTitle(index + 1, locale)),
           items: normalizeItems(group.items ?? []),
         };
       })
@@ -289,7 +296,7 @@ export const compressLocalGroup = (group: Group, ticks: Record<string, boolean>)
   };
 };
 
-export const decompressLocalGroup = (group: CompactLocalGroup) => {
+export const decompressLocalGroup = (group: CompactLocalGroup, locale?: Locale) => {
   const items: ListItem[] = group.i.map((entry) => {
     if (typeof entry === 'number') {
       return createDefaultItem(DEFAULT_ITEMS[entry], entry);
@@ -319,7 +326,7 @@ export const decompressLocalGroup = (group: CompactLocalGroup) => {
   return {
     group: {
       id: group.id,
-      title: group.id === DEFAULT_GROUP_ID ? DEFAULT_GROUP_TITLE : group.n,
+      title: group.id === DEFAULT_GROUP_ID ? getDefaultGroupTitle(locale) : group.n,
       items,
     },
     ticks,
@@ -412,10 +419,10 @@ export const parseCompactLocalState = (raw: string): CompactLocalState | null =>
   };
 };
 
-export const fromCompactLocalState = (state: CompactLocalState): PersistedAppState => {
-  const groups = state.g.map((group) => decompressLocalGroup(group).group);
+export const fromCompactLocalState = (state: CompactLocalState, locale?: Locale): PersistedAppState => {
+  const groups = state.g.map((group) => decompressLocalGroup(group, locale).group);
   const ticks = state.g.reduce<Record<string, boolean>>((acc, group) => {
-    Object.assign(acc, decompressLocalGroup(group).ticks);
+    Object.assign(acc, decompressLocalGroup(group, locale).ticks);
     return acc;
   }, {});
 
@@ -430,7 +437,7 @@ export const fromCompactLocalState = (state: CompactLocalState): PersistedAppSta
     activeGroupId: state.a,
     nextGroupId: parseInt(state.c?.[0] ?? '1', 36),
     nextItemId: parseInt(state.c?.[1] ?? '0', 36),
-  });
+  }, locale);
 };
 
 export const serializeEncryptedPayload = (iv: Uint8Array, data: Uint8Array) =>
@@ -452,7 +459,11 @@ export const encryptState = async (state: PersistedAppState, userId: string) => 
   return LZString.compressToEncodedURIComponent(serializeEncryptedPayload(iv, new Uint8Array(encrypted)));
 };
 
-export const decryptState = async (value: string, userId: string): Promise<PersistedAppState | null> => {
+export const decryptState = async (
+  value: string,
+  userId: string,
+  locale?: Locale
+): Promise<PersistedAppState | null> => {
   try {
     const decoded = LZString.decompressFromEncodedURIComponent(value) ?? value;
     const payload = parseEncryptedPayload(decoded);
@@ -465,7 +476,7 @@ export const decryptState = async (value: string, userId: string): Promise<Persi
       decodeBase64(payload.data)
     );
     const compactState = parseCompactLocalState(new TextDecoder().decode(decrypted));
-    return compactState ? fromCompactLocalState(compactState) : null;
+    return compactState ? fromCompactLocalState(compactState, locale) : null;
   } catch (error) {
     console.error('Failed to decrypt local state', error);
     return null;
@@ -551,7 +562,7 @@ export const parseSharedGroupData = (raw: string): SharedGroupData | null => {
   };
 };
 
-export const decompressSharedGroup = (data: SharedGroupData): ImportedGroupPayload => {
+export const decompressSharedGroup = (data: SharedGroupData, locale?: Locale): ImportedGroupPayload => {
   const items: ListItem[] = [];
   data.i.forEach((entry) => {
     if (typeof entry === 'number') {
@@ -583,21 +594,21 @@ export const decompressSharedGroup = (data: SharedGroupData): ImportedGroupPaylo
   return {
     group: {
       id: data.g || createOwnedId(data.o || 'ext', 0),
-      title: data.n || '导入页',
+      title: data.n || getImportedGroupTitle(locale),
       items,
     },
     sharedTicks,
   };
 };
 
-export const parseSharedPayload = (key: string): ImportedGroupPayload | null => {
+export const parseSharedPayload = (key: string, locale?: Locale): ImportedGroupPayload | null => {
   try {
     const decoded = LZString.decompressFromEncodedURIComponent(key);
     if (!decoded) return null;
     const parsed = parseSharedGroupData(decoded);
 
     if (!parsed || parsed.v !== 5) return null;
-    return decompressSharedGroup(parsed);
+    return decompressSharedGroup(parsed, locale);
   } catch (error) {
     console.error('Failed to decode shared key', error);
     return null;

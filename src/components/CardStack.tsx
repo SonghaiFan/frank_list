@@ -5,6 +5,7 @@ import type { AppMode, GroupPage } from '@/lib/notebook-types';
 import { cn } from '@/lib/cn';
 import { PAGE_CARD_HEIGHT_PX, PAGE_CARD_WIDTH_PX } from '@/lib/workspace-constants';
 import { PageCard } from '@/components/PageCard';
+import { useI18n } from '@/hooks/useI18n';
 
 interface CardStackProps {
   className?: string;
@@ -39,6 +40,7 @@ export function CardStack({
   onRemoveItem,
   onToggleTick,
 }: CardStackProps) {
+  const { t } = useI18n();
   const [focusedPageKey, setFocusedPageKey] = useState<string | null>(pages[0]?.key ?? null);
   const previousKeysRef = useRef<string[]>(pages.map((page) => page.key));
 
@@ -95,7 +97,7 @@ export function CardStack({
           onClick={onAppendPage}
           className="absolute right-0 z-20 flex h-12 min-w-12 items-center justify-center gap-1 rounded-full border-none bg-white/92 px-4 text-gray-900/85 shadow-[0_12px_26px_rgba(0,0,0,0.1)] transition-all hover:-translate-y-px hover:bg-white max-md:bottom-4.5 max-md:right-[calc(50%-58px)] max-md:top-auto"
           style={{ top: `${(PAGE_CARD_HEIGHT_PX / 2) - 24}px` }}
-          title="Add new page"
+          title={t('stack.addPage')}
         >
           <Plus size={18} />
         </button>

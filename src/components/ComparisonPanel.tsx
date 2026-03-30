@@ -1,6 +1,7 @@
 import { motion } from 'motion/react';
 import type { Group, ListItem } from '@/lib/notebook-types';
 import { cn } from '@/lib/cn';
+import { useI18n } from '@/hooks/useI18n';
 
 interface ComparisonPanelProps {
   comparison: {
@@ -13,6 +14,8 @@ interface ComparisonPanelProps {
 }
 
 export function ComparisonPanel({ comparison, group }: ComparisonPanelProps) {
+  const { t } = useI18n();
+
   return (
     <motion.div
       key={`result-${group.id}`}
@@ -24,13 +27,13 @@ export function ComparisonPanel({ comparison, group }: ComparisonPanelProps) {
       <div className="paper-lines">
         <div className="paper-content pt-3">
           <div className="mb-4 border-b border-neutral-100 on-lines">
-            <div className="ui-label text-klein">Comparison</div>
+            <div className="ui-label text-klein">{t('comparison.title')}</div>
             <div className="list-text">{group.title}</div>
           </div>
-          <ResultSection title="共同完成" items={comparison.bothDone} color="bg-klein" />
-          <ResultSection title="我已完成" items={comparison.iDoneHeNot} color="bg-neutral-800" />
-          <ResultSection title="对方已完成" items={comparison.heDoneINot} color="bg-neutral-400" />
-          <ResultSection title="都没有完成" items={comparison.bothNotDone} color="bg-neutral-200" />
+          <ResultSection title={t('comparison.bothDone')} items={comparison.bothDone} color="bg-klein" />
+          <ResultSection title={t('comparison.iDoneHeNot')} items={comparison.iDoneHeNot} color="bg-neutral-800" />
+          <ResultSection title={t('comparison.heDoneINot')} items={comparison.heDoneINot} color="bg-neutral-400" />
+          <ResultSection title={t('comparison.bothNotDone')} items={comparison.bothNotDone} color="bg-neutral-200" />
         </div>
       </div>
     </motion.div>
