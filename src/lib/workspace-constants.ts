@@ -2,7 +2,6 @@ export const PAGE_ITEM_CAPACITY = 10;
 export const PAGE_LINE_HEIGHT_PX = 36;
 export const PAGE_CARD_OVERHEAD_LINES = 4;
 export const PAGE_CARD_WIDTH_PX = 550;
-export const GALLERY_NOTEBOOK_SCALE = 0.85;
 
 export const DEFAULT_GROUP_ID = '0';
 export const PAGE_SIZE = PAGE_ITEM_CAPACITY;

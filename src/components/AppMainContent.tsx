@@ -5,7 +5,7 @@ import { GroupWorkspace } from '@/components/GroupWorkspace';
 import { MobileGroupList } from '@/components/MobileGroupList';
 import { cn } from '@/lib/cn';
 import { layoutSpring, panelTransition } from '@/lib/motion';
-import { GALLERY_NOTEBOOK_SCALE, getPageCardHeight, PAGE_CARD_WIDTH_PX, PAGE_SIZE } from '@/lib/workspace-constants';
+import { getPageCardHeight, PAGE_CARD_WIDTH_PX, PAGE_SIZE } from '@/lib/workspace-constants';
 import { useI18n } from '@/hooks/useI18n';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import type { Group, GroupPage, ListItem } from '@/lib/notebook-types';
@@ -192,7 +192,6 @@ export function AppMainContent({
                   id={group.id}
                   layoutId={`notebook-${group.id}`}
                   className="w-[550px] origin-top"
-                  style={{ transform: `scale(${GALLERY_NOTEBOOK_SCALE})` }}
                   closed={true}
                   coverTitle={group.title}
                   pages={pages}
@@ -215,7 +214,6 @@ export function AppMainContent({
               } : {
                 width: PAGE_CARD_WIDTH_PX,
                 height: pageCardHeight,
-                transform: `scale(${GALLERY_NOTEBOOK_SCALE})`,
                 transformOrigin: 'top center',
               }}
               className={cn(

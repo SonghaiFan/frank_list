@@ -11,6 +11,9 @@ import { CardCover } from '@/components/CardCover';
 import { CardEnd } from '@/components/CardEnd';
 
 interface NotebookProps {
+  disableLayoutAnimation?: boolean;
+  disablePresenceAnimation?: boolean;
+  disableClosedStateAnimation?: boolean;
   id?: string;
   className?: string;
   closed?: boolean;
@@ -48,6 +51,9 @@ const COLLECTION_STEP_MS = 140;
 const COLLECTION_BASE_MS = 980;
 
 export function Notebook({
+  disableLayoutAnimation = false,
+  disablePresenceAnimation = false,
+  disableClosedStateAnimation = false,
   id = 'default',
   className,
   closed = false,
@@ -151,6 +157,7 @@ export function Notebook({
   const canGoPrev = !closed && safeFocusedPageIndex > 0;
   const canGoNext = !closed && safeFocusedPageIndex < allPages.length - 1;
   const isCollecting = collectionState.active && !closed;
+  const shouldFreezeClosedState = closed && disableClosedStateAnimation && !isCollecting;
 
   const goPrevPage = () => {
     const prevPage = allPages[safeFocusedPageIndex - 1];
@@ -164,16 +171,16 @@ export function Notebook({
 
   return (
     <motion.div 
-      layout="position"
+      layout={disableLayoutAnimation ? false : "position"}
       layoutId={layoutId}
       className={cn(
         'relative flex w-full items-start justify-center perspective-[2000px]',
         className
       )}
       style={notebookStyle}
-      initial={{ opacity: 0, scale: 0.9, y: -200 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.9, y: -200 }}
+      initial={disablePresenceAnimation ? false : { opacity: 0, scale: 0.9, y: -200 }}
+      animate={disablePresenceAnimation ? undefined : { opacity: 1, scale: 1, y: 0 }}
+      exit={disablePresenceAnimation ? undefined : { opacity: 0, scale: 0.9, y: -200 }}
       transition={{
         type: 'spring',
         stiffness: 100,
@@ -206,6 +213,7 @@ export function Notebook({
 
           <motion.div
             className="relative flex h-[var(--page-card-height)] w-full max-w-125 justify-center perspective-[2000px] [transform-style:preserve-3d]"
+            initial={false}
             animate={isCollecting ? {
               x: [0, 18, 0],
               y: [0, -20, 0],
@@ -220,7 +228,7 @@ export function Notebook({
               scale: 1,
             }}
             transition={{
-              duration: 1.05,
+              duration: shouldFreezeClosedState ? 0 : 1.05,
               times: [0, 0.58, 1],
               ease: [0.22, 1, 0.36, 1],
             }}
@@ -282,7 +290,9 @@ export function Notebook({
                             times: [0, 0.78, 1],
                             ease: [0.16, 1, 0.3, 1],
                           }
-                        : { type: 'spring', stiffness: 220, damping: 28 }}
+                        : shouldFreezeClosedState
+                          ? { duration: 0 }
+                          : { type: 'spring', stiffness: 220, damping: 28 }}
                     onClick={(e) => {
                       e.stopPropagation();
                       if (closed) {
