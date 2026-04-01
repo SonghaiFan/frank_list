@@ -5,7 +5,6 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", monospace;
   --color-klein: #002FA7;
-  --paper-line-height: 36px;
   --paper-rule-color: #F4F4F7;
 }
 
@@ -52,8 +51,8 @@ body {
   width: 100%;
   background-image: repeating-linear-gradient(
     transparent 0px,
-    transparent calc(var(--paper-line-height) - 1px),
-    var(--paper-rule-color) var(--paper-line-height)
+    transparent calc(var(--paper-line-height, 36px) - 1px),
+    var(--paper-rule-color) var(--paper-line-height, 36px)
   );
   background-attachment: local;
 }
@@ -63,11 +62,11 @@ body {
 }
 
 .on-lines {
-  line-height: var(--paper-line-height);
+  line-height: var(--paper-line-height, 36px);
 }
 
 .paper-content li, .paper-content h3, .paper-content .input-row {
-  min-height: var(--paper-line-height);
+  min-height: var(--paper-line-height, 36px);
   display: flex;
   align-items: center;
 }
@@ -152,7 +151,7 @@ body {
   --marker-secondary-top: 58%;
   --marker-secondary-height: 0.78em;
   padding: 0 0.28em 0 0.12em;
-  min-height: var(--paper-line-height);
+  min-height: var(--paper-line-height, 36px);
   transition: color 0.28s ease, opacity 0.28s ease;
 }
 

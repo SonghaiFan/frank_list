@@ -5,7 +5,7 @@ import type { AppMode, GroupPage } from '@/lib/notebook-types';
 import { cn } from '@/lib/cn';
 import { getMarkerStyle, getOriginDotClassName, getOriginLabel } from '@/lib/notebook-ui';
 import { useI18n } from '@/hooks/useI18n';
-import { PAGE_CARD_HEIGHT_PX, PAGE_CARD_WIDTH_PX } from '@/lib/workspace-constants';
+import { getPageCardHeight, PAGE_CARD_WIDTH_PX, PAGE_ITEM_CAPACITY } from '@/lib/workspace-constants';
 
 interface PageCardProps {
   className?: string;
@@ -38,12 +38,13 @@ export function PageCard({
 }: PageCardProps) {
   const { locale, t } = useI18n();
   const cardRef = React.useRef<HTMLDivElement>(null);
+  const cardHeight = getPageCardHeight(PAGE_ITEM_CAPACITY);
 
   return (
     <motion.div
       ref={cardRef}
       className={cn('hybrid-paper paper-lines mx-auto', className)}
-      style={{ width: `${PAGE_CARD_WIDTH_PX}px`, height: `${PAGE_CARD_HEIGHT_PX}px` }}
+      style={{ width: `${PAGE_CARD_WIDTH_PX}px`, height: `${cardHeight}px` }}
       layout
       layoutId={`page-card-${page.key}`}
       transition={{ type: 'spring', stiffness: 260, damping: 30 }}

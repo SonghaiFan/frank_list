@@ -7,6 +7,7 @@ import { useI18n } from '@/hooks/useI18n';
 import type { UIFlow } from '@/stores/ui-store';
 
 interface MobileGroupListProps {
+  className?: string;
   flow?: UIFlow;
   group: Group;
   newItemText: string;
@@ -18,6 +19,7 @@ interface MobileGroupListProps {
 }
 
 export function MobileGroupList({
+  className,
   flow = 'workspace',
   group,
   newItemText,
@@ -31,7 +33,7 @@ export function MobileGroupList({
   const isCompareReviewFlow = flow === 'compare-review';
 
   return (
-    <div className="w-full space-y-4">
+    <div className={cn('w-full space-y-4', className)}>
       {isCompareReviewFlow && (
         <div className="list-text rounded-xl border border-klein/10 bg-klein/3 px-5 py-4 font-bold text-klein shadow-[0_18px_40px_rgba(0,47,167,0.05)]">
           {t('workspace.compareNotice')}

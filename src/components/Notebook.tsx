@@ -4,7 +4,8 @@ import { motion } from 'motion/react';
 import { cn } from '@/lib/cn';
 import type { GroupPage } from '@/lib/notebook-types';
 import { useI18n } from '@/hooks/useI18n';
-import { PAGE_CARD_HEIGHT_PX, PAGE_CARD_WIDTH_PX, PAGE_ITEM_CAPACITY, PAGE_LINE_HEIGHT_PX } from '@/lib/workspace-constants';
+import { layoutSpring } from '@/lib/motion';
+import { getPageCardHeight, PAGE_CARD_WIDTH_PX, PAGE_ITEM_CAPACITY, PAGE_LINE_HEIGHT_PX } from '@/lib/workspace-constants';
 import { PageCard } from '@/components/PageCard';
 import { CardCover } from '@/components/CardCover';
 import { CardEnd } from '@/components/CardEnd';
@@ -14,6 +15,7 @@ interface NotebookProps {
   className?: string;
   closed?: boolean;
   coverTitle?: string;
+  layoutId?: string;
   style?: React.CSSProperties;
   onOpen?: () => void;
   pages: GroupPage[];
@@ -23,7 +25,7 @@ interface NotebookProps {
 }
 
 
-function NotebookSpine({ height = PAGE_CARD_HEIGHT_PX, layoutId }: { height?: number; layoutId?: string }) {
+function NotebookSpine({ height, layoutId }: { height: number; layoutId?: string }) {
   const count = Math.floor(height / PAGE_LINE_HEIGHT_PX);
   
   return (
@@ -50,6 +52,7 @@ export function Notebook({
   className,
   closed = false,
   coverTitle,
+  layoutId,
   style,
   onOpen,
   pages,
@@ -58,6 +61,11 @@ export function Notebook({
   onToggleTick,
 }: NotebookProps) {
   const { t } = useI18n();
+  const pageCardHeight = getPageCardHeight(PAGE_ITEM_CAPACITY);
+  const notebookStyle = {
+    ...style,
+    ['--page-card-height' as string]: `${pageCardHeight}px`,
+  } satisfies React.CSSProperties;
   const allPages = useMemo(() => {
     const coverPage: GroupPage = {
       key: `notebook-cover-${id}`,
@@ -156,12 +164,13 @@ export function Notebook({
 
   return (
     <motion.div 
-      layout
+      layout="position"
+      layoutId={layoutId}
       className={cn(
-        'relative flex w-full items-start justify-center perspective-[2000px] mt-10',
+        'relative flex w-full items-start justify-center perspective-[2000px]',
         className
       )}
-      style={{ minHeight: `${PAGE_CARD_HEIGHT_PX + 88}px`, ...style }}
+      style={notebookStyle}
       initial={{ opacity: 0, scale: 0.9, y: -200 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.9, y: -200 }}
@@ -169,7 +178,7 @@ export function Notebook({
         type: 'spring',
         stiffness: 100,
         damping: 20,
-        layout: { type: 'spring', stiffness: 210, damping: 28 },
+        layout: layoutSpring,
       }}
     >
         {!closed && allPages.length > 1 && (
@@ -178,8 +187,7 @@ export function Notebook({
                 type="button"
                 onClick={goPrevPage}
                 disabled={!canGoPrev}
-                className="absolute left-4 z-50 flex h-12 w-12 items-center justify-center rounded-full border border-neutral-200 bg-white/80 text-[#666] shadow-[0_8px_16px_rgba(0,0,0,0.06)] backdrop-blur-sm transition-all hover:-translate-y-px hover:border-klein hover:text-klein disabled:cursor-not-allowed disabled:opacity-35"
-                style={{ top: `${(PAGE_CARD_HEIGHT_PX / 2) - 24}px` }}
+                className="absolute top-[calc(var(--page-card-height)/2-24px)] left-4 z-50 flex h-12 w-12 items-center justify-center rounded-full border border-neutral-200 bg-white/80 text-[#666] shadow-[0_8px_16px_rgba(0,0,0,0.06)] backdrop-blur-sm transition-all hover:-translate-y-px hover:border-klein hover:text-klein disabled:cursor-not-allowed disabled:opacity-35"
                 title={t('notebook.previousPage')}
               >
                 <ArrowLeft size={20} />
@@ -188,8 +196,7 @@ export function Notebook({
                 type="button"
                 onClick={goNextPage}
                 disabled={!canGoNext}
-                className="absolute right-4 z-50 flex h-12 w-12 items-center justify-center rounded-full border border-neutral-200 bg-white/80 text-[#666] shadow-[0_8px_16px_rgba(0,0,0,0.06)] backdrop-blur-sm transition-all hover:-translate-y-px hover:border-klein hover:text-klein disabled:cursor-not-allowed disabled:opacity-35"
-                style={{ top: `${(PAGE_CARD_HEIGHT_PX / 2) - 24}px` }}
+                className="absolute top-[calc(var(--page-card-height)/2-24px)] right-4 z-50 flex h-12 w-12 items-center justify-center rounded-full border border-neutral-200 bg-white/80 text-[#666] shadow-[0_8px_16px_rgba(0,0,0,0.06)] backdrop-blur-sm transition-all hover:-translate-y-px hover:border-klein hover:text-klein disabled:cursor-not-allowed disabled:opacity-35"
                 title={t('notebook.nextPage')}
               >
                 <ArrowRight size={20} />
@@ -198,8 +205,7 @@ export function Notebook({
           )}
 
           <motion.div
-            className="relative w-full flex justify-center"
-            style={{ transformStyle: 'preserve-3d' }}
+            className="relative flex h-[var(--page-card-height)] w-full max-w-125 justify-center perspective-[2000px] [transform-style:preserve-3d]"
             animate={isCollecting ? {
               x: [0, 18, 0],
               y: [0, -20, 0],
@@ -219,12 +225,7 @@ export function Notebook({
               ease: [0.22, 1, 0.36, 1],
             }}
           >
-          <NotebookSpine layoutId={`notebook-spine-${id}`} />
-          
-          <div 
-            className="relative w-full max-w-125 perspective-[2000px]"
-            style={{ height: `${PAGE_CARD_HEIGHT_PX + 8}px` }}
-          >
+          <NotebookSpine height={pageCardHeight} layoutId={`notebook-spine-${id}`} />
               {allPages.map((page, index) => {
                 const distanceFromFocus = index - safeFocusedPageIndex;
                 const isPast = distanceFromFocus < 0;
@@ -256,15 +257,8 @@ export function Notebook({
                 return (
                   <motion.div
                     key={page.key}
-                    
-                    className="absolute left-1/2 top-0 cursor-pointer border-none bg-transparent p-0 text-left"
-                    style={{
-                      width: `${PAGE_CARD_WIDTH_PX}px`,
-                      height: `${PAGE_CARD_HEIGHT_PX}px`,
-                      zIndex,
-                      transformStyle: 'preserve-3d',
-                      transformOrigin: 'left center',
-                    }}
+                    className="absolute left-1/2 top-0 h-[var(--page-card-height)] w-[550px] origin-left cursor-pointer border-none bg-transparent p-0 text-left [transform-style:preserve-3d]"
+                    style={{ zIndex }}
                     initial={false}
                     animate={isCollecting && isIncoming ? {
                       x: [-240, 20, x],
@@ -303,8 +297,7 @@ export function Notebook({
                     }}
                   >
                     <div
-                      className="absolute inset-0 backface-hidden"
-                      style={{ pointerEvents: isCurrent ? 'auto' : 'none' }}
+                      className={cn('absolute inset-0 backface-hidden', isCurrent ? 'pointer-events-auto' : 'pointer-events-none')}
                     >
                       {/* Front of the page */}
                       {page.type === 'cover' ? (
@@ -334,8 +327,7 @@ export function Notebook({
                       )}
                     </div>
                     <div
-                      className="absolute inset-0 rounded-md border border-[rgba(0,47,167,0.08)] bg-[linear-gradient(180deg,#f9fafc,#f1f2f5)] shadow-[0_26px_44px_rgba(0,47,167,0.08)] backface-hidden"
-                      style={{ transform: 'rotateY(180deg)' }}
+                      className="absolute inset-0 rounded-md border border-[rgba(0,47,167,0.08)] bg-[linear-gradient(180deg,#f9fafc,#f1f2f5)] shadow-[0_26px_44px_rgba(0,47,167,0.08)] backface-hidden [transform:rotateY(180deg)]"
                     >
                       {/* Back of the page */}
                       <div className="absolute inset-y-0 left-12.5 w-px bg-[rgba(0,47,167,0.05)]" />
@@ -366,8 +358,7 @@ export function Notebook({
                   </motion.div>
                 );
               })}
-            </div>
-            </motion.div>
+          </motion.div>
     </motion.div>
   );
 }

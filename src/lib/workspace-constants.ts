@@ -1,13 +1,23 @@
 export const PAGE_ITEM_CAPACITY = 10;
 export const PAGE_LINE_HEIGHT_PX = 36;
-// Header (2) + Footer (2) = 4 lines overhead
-// (5 items + 4 overhead) * 36px = 324px
-export const PAGE_CARD_HEIGHT_PX = (PAGE_ITEM_CAPACITY + 4) * PAGE_LINE_HEIGHT_PX;
+export const PAGE_CARD_OVERHEAD_LINES = 4;
 export const PAGE_CARD_WIDTH_PX = 550;
+export const GALLERY_NOTEBOOK_SCALE = 0.85;
 
 export const DEFAULT_GROUP_ID = '0';
 export const PAGE_SIZE = PAGE_ITEM_CAPACITY;
 export const LOCAL_STATE_STORAGE_KEY = 'rams-life-state';
+
+export function getPageCardHeight(itemCapacity: number) {
+  return (itemCapacity + PAGE_CARD_OVERHEAD_LINES) * PAGE_LINE_HEIGHT_PX;
+}
+
+export function getPageCardFrameStyle(itemCapacity = PAGE_ITEM_CAPACITY) {
+  return {
+    width: `${PAGE_CARD_WIDTH_PX}px`,
+    height: `${getPageCardHeight(itemCapacity)}px`,
+  } as const;
+}
 
 export const ID_ALPHABET = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 export const BIT_ALPHABET = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_';

@@ -3,7 +3,7 @@ import { Plus } from 'lucide-react';
 import { motion } from 'motion/react';
 import type { AppMode, GroupPage } from '@/lib/notebook-types';
 import { cn } from '@/lib/cn';
-import { PAGE_CARD_HEIGHT_PX, PAGE_CARD_WIDTH_PX } from '@/lib/workspace-constants';
+import { getPageCardHeight } from '@/lib/workspace-constants';
 import { PageCard } from '@/components/PageCard';
 import { useI18n } from '@/hooks/useI18n';
 
@@ -41,6 +41,10 @@ export function CardStack({
   onToggleTick,
 }: CardStackProps) {
   const { t } = useI18n();
+  const pageCardHeight = getPageCardHeight(pageSize);
+  const stackStyle = {
+    ['--page-card-height' as string]: `${pageCardHeight}px`,
+  } satisfies React.CSSProperties;
   const [focusedPageKey, setFocusedPageKey] = useState<string | null>(pages[0]?.key ?? null);
   const previousKeysRef = useRef<string[]>(pages.map((page) => page.key));
 
@@ -88,15 +92,14 @@ export function CardStack({
 
   return (
     <div 
-      className={cn('relative flex items-start justify-center overflow-visible px-6 pb-8 pt-2 max-md:px-0', className)}
-      style={{ minHeight: `${PAGE_CARD_HEIGHT_PX + 88}px` }}
+      className={cn('relative flex h-[var(--page-card-height)] items-start justify-center overflow-visible', className)}
+      style={stackStyle}
     >
       {areAllPagesFull && isLastPageFocused && (
         <button
           type="button"
           onClick={onAppendPage}
-          className="absolute right-0 z-20 flex h-12 min-w-12 items-center justify-center gap-1 rounded-full border-none bg-white/92 px-4 text-gray-900/85 shadow-[0_12px_26px_rgba(0,0,0,0.1)] transition-all hover:-translate-y-px hover:bg-white max-md:bottom-4.5 max-md:right-[calc(50%-58px)] max-md:top-auto"
-          style={{ top: `${(PAGE_CARD_HEIGHT_PX / 2) - 24}px` }}
+          className="absolute top-[calc(var(--page-card-height)/2-24px)] right-0 z-20 flex h-12 min-w-12 items-center justify-center gap-1 rounded-full border-none bg-white/92 px-4 text-gray-900/85 shadow-[0_12px_26px_rgba(0,0,0,0.1)] transition-all hover:-translate-y-px hover:bg-white max-md:bottom-4.5 max-md:right-[calc(50%-58px)] max-md:top-auto"
           title={t('stack.addPage')}
         >
           <Plus size={18} />
@@ -113,12 +116,12 @@ export function CardStack({
           <motion.div
             key={page.key}
             className={cn(
-              'absolute inset-x-0 top-0 mx-auto cursor-pointer transition-all duration-300 ease-out',
+              'absolute inset-x-0 top-0 mx-auto w-[550px] cursor-pointer transition-all duration-300 ease-out',
               // Removed drop-shadow to prevent shadow accumulation/darkening artifacts
               isActive && 'is-active cursor-default',
               isVisible ? getStackClasses(offset) : 'translate-x-0 translate-y-10 scale-[0.82] opacity-0 pointer-events-none'
             )}
-            style={{ zIndex: pages.length - absOffset, width: `${PAGE_CARD_WIDTH_PX}px` }}
+            style={{ zIndex: pages.length - absOffset }}
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: isVisible ? 1 : 0, y: 0 }}
             layout
