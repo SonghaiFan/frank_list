@@ -17,7 +17,7 @@ export default function App() {
         if (vm.flow === 'workspace') vm.onTogglePrimaryView();
       }}
     >
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="w-full max-w-[1240px]">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="w-full max-w-310">
         <div className="w-full" onClick={(e) => e.stopPropagation()}>
           <AppHeader
             copySuccess={vm.copySuccess}

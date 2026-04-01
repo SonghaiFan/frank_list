@@ -212,7 +212,7 @@ export function Notebook({
           )}
 
           <motion.div
-            className="relative flex h-[var(--page-card-height)] w-full max-w-125 justify-center perspective-[2000px] [transform-style:preserve-3d]"
+            className="relative flex h-(--page-card-height) w-full max-w-125 justify-center perspective-[2000px] transform-3d"
             initial={false}
             animate={isCollecting ? {
               x: [0, 18, 0],
@@ -337,7 +337,7 @@ export function Notebook({
                       )}
                     </div>
                     <div
-                      className="absolute inset-0 rounded-md border border-[rgba(0,47,167,0.08)] bg-[linear-gradient(180deg,#f9fafc,#f1f2f5)] shadow-[0_26px_44px_rgba(0,47,167,0.08)] backface-hidden [transform:rotateY(180deg)]"
+                      className="absolute inset-0 rounded-md border border-[rgba(0,47,167,0.08)] bg-[linear-gradient(180deg,#f9fafc,#f1f2f5)] shadow-[0_26px_44px_rgba(0,47,167,0.08)] backface-hidden transform-[rotateY(180deg)]"
                     >
                       {/* Back of the page */}
                       <div className="absolute inset-y-0 left-12.5 w-px bg-[rgba(0,47,167,0.05)]" />

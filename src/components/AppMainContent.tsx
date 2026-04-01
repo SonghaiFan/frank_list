@@ -83,7 +83,6 @@ export function AppMainContent({
           <motion.section
             key={`comparison-${activeGroup.id}`}
             layout="position"
-            className="w-full max-w-[1240px]"
             initial={viewTransition.initial}
             animate={viewTransition.animate}
             exit={viewTransition.exit}
@@ -103,7 +102,7 @@ export function AppMainContent({
           >
             {isMobile ? (
               <MobileGroupList
-                className="w-full max-w-[800px] cursor-default"
+                className="w-full cursor-default"
                 flow={flow}
                 group={activeGroup}
                 newItemText={newItemText}
@@ -118,7 +117,7 @@ export function AppMainContent({
                 <GroupWorkspace
                   activeGroup={activeGroup}
                   activeGroupPages={stackPages}
-                  className="w-full max-w-[800px] cursor-default"
+                  className="w-full cursor-default"
                   flow={flow}
                   newItemText={newItemText}
                   pageSize={PAGE_SIZE}
@@ -149,7 +148,7 @@ export function AppMainContent({
           <motion.section
             key="closed-gallery"
             layout="position"
-            className="mx-auto grid w-full max-w-[1200px] grid-cols-1 items-start justify-items-center gap-y-6 px-3 pt-6 md:grid-cols-2 md:gap-x-20 md:gap-y-16 md:px-4 md:pt-10"
+            className="mx-auto grid w-full max-w-300 grid-cols-1 items-start justify-items-center gap-y-6 px-3 pt-6 md:grid-cols-2 md:gap-x-20 md:gap-y-16 md:px-4 md:pt-10"
             initial={viewTransition.initial}
             animate={viewTransition.animate}
             exit={viewTransition.exit}
@@ -160,7 +159,7 @@ export function AppMainContent({
                 <button
                   key={group.id}
                   type="button"
-                  className="hybrid-paper paper-lines w-full max-w-[360px] cursor-pointer text-left transition-transform hover:-translate-y-px"
+                  className="hybrid-paper paper-lines w-full max-w-90 cursor-pointer text-left transition-transform hover:-translate-y-px"
                   onClick={() => onOpenGroupFromGallery(group.id)}
                   title={group.title}
                 >
@@ -191,7 +190,6 @@ export function AppMainContent({
                   key={group.id}
                   id={group.id}
                   layoutId={`notebook-${group.id}`}
-                  className="w-[550px] origin-top"
                   closed={true}
                   coverTitle={group.title}
                   pages={pages}
