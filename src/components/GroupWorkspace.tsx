@@ -1,10 +1,10 @@
-import React from 'react';
-import { motion } from 'motion/react';
-import type { Group, GroupPage } from '@/lib/notebook-types';
-import type { UIFlow } from '@/stores/ui-store';
-import { CardStack } from '@/components/CardStack';
-import { useI18n } from '@/hooks/useI18n';
-import { layoutSpring } from '@/lib/motion';
+import React from "react";
+import { motion } from "motion/react";
+import type { Group, GroupPage } from "@/lib/notebook-types";
+import type { UIFlow } from "@/stores/ui-store";
+import { CardStack } from "@/components/CardStack";
+import { useI18n } from "@/hooks/useI18n";
+import { layoutSpring } from "@/lib/motion";
 
 interface GroupWorkspaceProps {
   activeGroup: Group;
@@ -18,7 +18,10 @@ interface GroupWorkspaceProps {
   onAppendPage: () => void;
   onItemTextChange: (value: string) => void;
   onRemoveItem: (itemId: string) => void;
-  onToggleTick: (itemId: string, e?: React.MouseEvent | React.ChangeEvent) => void;
+  onToggleTick: (
+    itemId: string,
+    e?: React.MouseEvent | React.ChangeEvent,
+  ) => void;
   onAddItem: () => void;
 }
 
@@ -38,8 +41,8 @@ export function GroupWorkspace({
   onAddItem,
 }: GroupWorkspaceProps) {
   const { t } = useI18n();
-  const isCompareReviewFlow = flow === 'compare-review';
-  const cardMode = isCompareReviewFlow ? 'compare-step-1' : 'edit';
+  const isCompareReviewFlow = flow === "compare-review";
+  const cardMode = isCompareReviewFlow ? "compare-step-1" : "edit";
 
   return (
     <motion.div
@@ -50,15 +53,15 @@ export function GroupWorkspace({
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.9, y: 200, transition: { duration: 0.2 } }}
       transition={{
-        type: 'spring',
+        type: "spring",
         stiffness: 200,
         damping: 25,
         layout: layoutSpring,
       }}
     >
       {isCompareReviewFlow && (
-        <div className="mb-5 list-text rounded-xl border border-klein/10 bg-klein/3 px-5 py-4 font-bold text-klein shadow-[0_18px_40px_rgba(0,47,167,0.05)]">
-          {t('workspace.compareNotice')}
+        <div className="list-text border-klein/10 bg-klein/3 text-klein mb-5 rounded-xl border px-5 py-4 font-bold shadow-[0_18px_40px_rgba(0,47,167,0.05)]">
+          {t("workspace.compareNotice")}
         </div>
       )}
 

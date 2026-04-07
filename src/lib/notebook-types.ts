@@ -1,5 +1,5 @@
-export type ItemOriginType = 'default' | 'self' | 'external';
-export type AppMode = 'edit' | 'compare-step-1' | 'compare-result';
+export type ItemOriginType = "default" | "self" | "external";
+export type AppMode = "edit" | "compare-step-1" | "compare-result";
 
 export interface ItemOrigin {
   type: ItemOriginType;
@@ -20,7 +20,7 @@ export interface Group {
 
 export interface GroupPage {
   key: string;
-  type?: 'content' | 'cover' | 'end';
+  type?: "content" | "cover" | "end";
   groupId: string;
   groupTitle: string;
   pageIndex: number;
@@ -40,7 +40,10 @@ export interface PersistedAppState {
   nextItemId: number;
 }
 
-export type CompactLocalItem = number | [string, string] | [string, string, string];
+export type CompactLocalItem =
+  | number
+  | [string, string]
+  | [string, string, string];
 
 export interface CompactLocalGroup {
   id: string;

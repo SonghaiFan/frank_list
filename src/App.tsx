@@ -1,23 +1,27 @@
-import { AppHeader } from '@/components/AppHeader';
-import { AppFooter } from '@/components/AppFooter';
-import { AppMainContent } from '@/components/AppMainContent';
-import { AppOverlays } from '@/components/AppOverlays';
-import { useAppViewModel } from '@/hooks/useAppViewModel';
-import { motion } from 'motion/react';
+import { AppHeader } from "@/components/AppHeader";
+import { AppFooter } from "@/components/AppFooter";
+import { AppMainContent } from "@/components/AppMainContent";
+import { AppOverlays } from "@/components/AppOverlays";
+import { useAppViewModel } from "@/hooks/useAppViewModel";
+import { motion } from "motion/react";
 
 export default function App() {
   const vm = useAppViewModel();
 
   return (
     <div
-      className={`min-h-screen p-3 md:p-10 flex flex-col items-center transition-colors ${
-        vm.isWorkspaceFlow ? 'cursor-zoom-out' : ''
+      className={`flex min-h-screen flex-col items-center p-3 transition-colors md:p-10 ${
+        vm.isWorkspaceFlow ? "cursor-zoom-out" : ""
       }`}
       onClick={() => {
-        if (vm.flow === 'workspace') vm.onTogglePrimaryView();
+        if (vm.flow === "workspace") vm.onTogglePrimaryView();
       }}
     >
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="w-full max-w-310">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="w-full max-w-310"
+      >
         <div className="w-full" onClick={(e) => e.stopPropagation()}>
           <AppHeader
             copySuccess={vm.copySuccess}

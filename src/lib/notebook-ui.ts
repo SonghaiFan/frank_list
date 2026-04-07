@@ -1,7 +1,7 @@
-import type React from 'react';
-import type { Locale } from '@/lib/i18n';
-import type { ItemOrigin } from '@/lib/notebook-types';
-import { translate } from '@/lib/i18n';
+import type React from "react";
+import type { Locale } from "@/lib/i18n";
+import type { ItemOrigin } from "@/lib/notebook-types";
+import { translate } from "@/lib/i18n";
 
 const getHashFromString = (value: string) => {
   let hash = 0;
@@ -21,37 +21,39 @@ export const getMarkerStyle = (text: string): React.CSSProperties => {
   const secondaryHeight = 0.74 + ((hash >> 4) % 3) * 0.03;
 
   return {
-    ['--marker-tilt' as string]: `${tilt}deg`,
-    ['--marker-top' as string]: `${topOffset}%`,
-    ['--marker-height' as string]: `${height}em`,
-    ['--marker-secondary-tilt' as string]: `${secondaryTilt}deg`,
-    ['--marker-secondary-top' as string]: `${secondaryTop}%`,
-    ['--marker-secondary-height' as string]: `${secondaryHeight}em`,
+    ["--marker-tilt" as string]: `${tilt}deg`,
+    ["--marker-top" as string]: `${topOffset}%`,
+    ["--marker-height" as string]: `${height}em`,
+    ["--marker-secondary-tilt" as string]: `${secondaryTilt}deg`,
+    ["--marker-secondary-top" as string]: `${secondaryTop}%`,
+    ["--marker-secondary-height" as string]: `${secondaryHeight}em`,
   };
 };
 
 export const getOriginDotClassName = (origin: ItemOrigin) => {
   switch (origin.type) {
-    case 'self':
-      return 'bg-klein';
-    case 'external':
-      return 'bg-amber-400';
-    case 'default':
+    case "self":
+      return "bg-klein";
+    case "external":
+      return "bg-amber-400";
+    case "default":
     default:
-      return 'bg-neutral-300';
+      return "bg-neutral-300";
   }
 };
 
 export const getOriginLabel = (origin: ItemOrigin, locale: Locale) => {
   switch (origin.type) {
-    case 'self':
-      return translate(locale, 'origin.self');
-    case 'external':
+    case "self":
+      return translate(locale, "origin.self");
+    case "external":
       return origin.ownerId
-        ? translate(locale, 'origin.externalWithOwner', { ownerId: origin.ownerId })
-        : translate(locale, 'origin.external');
-    case 'default':
+        ? translate(locale, "origin.externalWithOwner", {
+            ownerId: origin.ownerId,
+          })
+        : translate(locale, "origin.external");
+    case "default":
     default:
-      return translate(locale, 'origin.default');
+      return translate(locale, "origin.default");
   }
 };

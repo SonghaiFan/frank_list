@@ -1,4 +1,4 @@
-import LZString from 'lz-string';
+import LZString from "lz-string";
 import {
   BIT_ALPHABET,
   DEFAULT_GROUP_ID,
@@ -12,13 +12,13 @@ import {
   LOCAL_STATE_STORAGE_KEY,
   PAGE_SIZE,
   TOP_SEP,
-} from '@/lib/workspace-constants';
+} from "@/lib/workspace-constants";
 import {
   getDefaultGroupTitle,
   getGeneratedPageTitle,
   getImportedGroupTitle,
-} from '@/lib/notebook-labels';
-import type { Locale } from '@/lib/i18n';
+} from "@/lib/notebook-labels";
+import type { Locale } from "@/lib/i18n";
 import type {
   CompactLocalGroup,
   CompactLocalItem,
@@ -30,35 +30,47 @@ import type {
   ListItem,
   PersistedAppState,
   SharedGroupData,
-} from '@/lib/notebook-types';
+} from "@/lib/notebook-types";
 
 export const createDefaultItem = (text: string, index: number): ListItem => ({
   id: `_${index.toString(36)}`,
   text,
-  origin: { type: 'default' },
+  origin: { type: "default" },
 });
 
-export const DEFAULT_ITEM_RECORDS = DEFAULT_ITEMS.map((text, index) => createDefaultItem(text, index));
-export const DEFAULT_ITEM_INDEX_BY_TEXT = Object.fromEntries(DEFAULT_ITEMS.map((item, idx) => [item, idx]));
-export const DEFAULT_ITEM_INDEX_BY_ID = Object.fromEntries(DEFAULT_ITEM_RECORDS.map((item, idx) => [item.id, idx]));
+export const DEFAULT_ITEM_RECORDS = DEFAULT_ITEMS.map((text, index) =>
+  createDefaultItem(text, index),
+);
+export const DEFAULT_ITEM_INDEX_BY_TEXT = Object.fromEntries(
+  DEFAULT_ITEMS.map((item, idx) => [item, idx]),
+);
+export const DEFAULT_ITEM_INDEX_BY_ID = Object.fromEntries(
+  DEFAULT_ITEM_RECORDS.map((item, idx) => [item.id, idx]),
+);
 
 export const randomId = (length = 4) => {
-  if (typeof crypto !== 'undefined' && 'getRandomValues' in crypto) {
+  if (typeof crypto !== "undefined" && "getRandomValues" in crypto) {
     const bytes = crypto.getRandomValues(new Uint8Array(length));
-    return Array.from(bytes, (byte) => ID_ALPHABET[byte % ID_ALPHABET.length]).join('');
+    return Array.from(
+      bytes,
+      (byte) => ID_ALPHABET[byte % ID_ALPHABET.length],
+    ).join("");
   }
-  return Math.random().toString(36).slice(2, 2 + length);
+  return Math.random()
+    .toString(36)
+    .slice(2, 2 + length);
 };
 
-export const createOwnedId = (ownerId: string, index: number) => `${ownerId}.${index.toString(36)}`;
+export const createOwnedId = (ownerId: string, index: number) =>
+  `${ownerId}.${index.toString(36)}`;
 
 export const getOwnerIdFromScopedId = (id: string) => {
-  const separatorIndex = id.indexOf('.');
+  const separatorIndex = id.indexOf(".");
   return separatorIndex === -1 ? null : id.slice(0, separatorIndex);
 };
 
 export const packBits = (bits: boolean[]) => {
-  let packed = '';
+  let packed = "";
   for (let index = 0; index < bits.length; index += 6) {
     let value = 0;
     for (let offset = 0; offset < 6; offset += 1) {
@@ -84,11 +96,14 @@ export const unpackBits = (packed: string, count: number) => {
 };
 
 export const escapeCompact = (value: string) =>
-  value.replace(/[\\\u0001\u0002\u0003\u0004\u0005]/g, (char) => `${ESCAPE_CHAR}${char}`);
+  value.replace(
+    /[\\\u0001\u0002\u0003\u0004\u0005]/g,
+    (char) => `${ESCAPE_CHAR}${char}`,
+  );
 
 export const splitEscaped = (value: string, separator: string) => {
   const parts: string[] = [];
-  let current = '';
+  let current = "";
   let escaping = false;
 
   for (const char of value) {
@@ -105,7 +120,7 @@ export const splitEscaped = (value: string, separator: string) => {
 
     if (char === separator) {
       parts.push(current);
-      current = '';
+      current = "";
       continue;
     }
 
@@ -119,7 +134,10 @@ export const splitEscaped = (value: string, separator: string) => {
 export const createDefaultGroup = (locale?: Locale): Group => ({
   id: DEFAULT_GROUP_ID,
   title: getDefaultGroupTitle(locale),
-  items: DEFAULT_ITEM_RECORDS.map((item) => ({ ...item, origin: { ...item.origin } })),
+  items: DEFAULT_ITEM_RECORDS.map((item) => ({
+    ...item,
+    origin: { ...item.origin },
+  })),
 });
 
 export const createDefaultState = (locale?: Locale): PersistedAppState => ({
@@ -143,29 +161,41 @@ export const cloneGroup = (group: Group): Group => ({
   items: group.items.map(cloneItem),
 });
 
-export const normalizeOrigin = (origin?: ItemOrigin | string, item?: { id?: string; text: string }): ItemOrigin => {
-  if (origin && typeof origin === 'object' && 'type' in origin) {
+export const normalizeOrigin = (
+  origin?: ItemOrigin | string,
+  item?: { id?: string; text: string },
+): ItemOrigin => {
+  if (origin && typeof origin === "object" && "type" in origin) {
     return origin;
   }
 
-  if (typeof origin === 'string') {
-    if (origin === 'local') {
-      const isDefault = item?.id ? DEFAULT_ITEM_INDEX_BY_ID[item.id] !== undefined : DEFAULT_ITEM_INDEX_BY_TEXT[item?.text ?? ''] !== undefined;
-      return { type: isDefault ? 'default' : 'self' };
+  if (typeof origin === "string") {
+    if (origin === "local") {
+      const isDefault = item?.id
+        ? DEFAULT_ITEM_INDEX_BY_ID[item.id] !== undefined
+        : DEFAULT_ITEM_INDEX_BY_TEXT[item?.text ?? ""] !== undefined;
+      return { type: isDefault ? "default" : "self" };
     }
-    return { type: 'external', ownerId: origin };
+    return { type: "external", ownerId: origin };
   }
 
-  if (item?.id && DEFAULT_ITEM_INDEX_BY_ID[item.id] !== undefined) return { type: 'default' };
-  if (item?.text && DEFAULT_ITEM_INDEX_BY_TEXT[item.text] !== undefined) return { type: 'default' };
-  return { type: 'self' };
+  if (item?.id && DEFAULT_ITEM_INDEX_BY_ID[item.id] !== undefined)
+    return { type: "default" };
+  if (item?.text && DEFAULT_ITEM_INDEX_BY_TEXT[item.text] !== undefined)
+    return { type: "default" };
+  return { type: "self" };
 };
 
-export const normalizeItems = (items: Array<ListItem | { id?: string; text: string; origin?: ItemOrigin | string }>) => {
+export const normalizeItems = (
+  items: Array<
+    ListItem | { id?: string; text: string; origin?: ItemOrigin | string }
+  >,
+) => {
   return items.map((item, index) => {
-    const fallbackId = DEFAULT_ITEM_INDEX_BY_TEXT[item.text] !== undefined
-      ? `_${DEFAULT_ITEM_INDEX_BY_TEXT[item.text].toString(36)}`
-      : randomId(6);
+    const fallbackId =
+      DEFAULT_ITEM_INDEX_BY_TEXT[item.text] !== undefined
+        ? `_${DEFAULT_ITEM_INDEX_BY_TEXT[item.text].toString(36)}`
+        : randomId(6);
     const id = item.id ?? fallbackId;
     return {
       id,
@@ -175,21 +205,28 @@ export const normalizeItems = (items: Array<ListItem | { id?: string; text: stri
   });
 };
 
-export const normalizeState = (state?: Partial<PersistedAppState>, locale?: Locale): PersistedAppState => {
+export const normalizeState = (
+  state?: Partial<PersistedAppState>,
+  locale?: Locale,
+): PersistedAppState => {
   const fallback = createDefaultState(locale);
-  const groups = Array.isArray(state?.groups) && state?.groups.length > 0
-    ? state!.groups.map((group, index) => {
-        const groupId = group.id || randomId(6);
-        return {
-          id: groupId,
-          title: groupId === DEFAULT_GROUP_ID
-            ? getDefaultGroupTitle(locale)
-            : (group.title || getGeneratedPageTitle(index + 1, locale)),
-          items: normalizeItems(group.items ?? []),
-        };
-      })
-    : fallback.groups;
-  const activeGroupId = groups.some((group) => group.id === state?.activeGroupId)
+  const groups =
+    Array.isArray(state?.groups) && state?.groups.length > 0
+      ? state!.groups.map((group, index) => {
+          const groupId = group.id || randomId(6);
+          return {
+            id: groupId,
+            title:
+              groupId === DEFAULT_GROUP_ID
+                ? getDefaultGroupTitle(locale)
+                : group.title || getGeneratedPageTitle(index + 1, locale),
+            items: normalizeItems(group.items ?? []),
+          };
+        })
+      : fallback.groups;
+  const activeGroupId = groups.some(
+    (group) => group.id === state?.activeGroupId,
+  )
     ? state!.activeGroupId!
     : groups[0].id;
 
@@ -206,7 +243,7 @@ export const normalizeState = (state?: Partial<PersistedAppState>, locale?: Loca
 };
 
 export const encodeBase64 = (value: Uint8Array) => {
-  let binary = '';
+  let binary = "";
   value.forEach((byte) => {
     binary += String.fromCharCode(byte);
   });
@@ -220,25 +257,36 @@ export const decodeBase64 = (value: string) => {
 
 export const getEncryptionKey = async (userId: string) => {
   const keyMaterial = new TextEncoder().encode(`rams-life-state:${userId}:v3`);
-  const digest = await crypto.subtle.digest('SHA-256', keyMaterial);
-  return crypto.subtle.importKey('raw', digest, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
+  const digest = await crypto.subtle.digest("SHA-256", keyMaterial);
+  return crypto.subtle.importKey("raw", digest, { name: "AES-GCM" }, false, [
+    "encrypt",
+    "decrypt",
+  ]);
 };
 
-export const getPageKey = (groupId: string, pageIndex: number) => `${groupId}:${pageIndex}`;
+export const getPageKey = (groupId: string, pageIndex: number) =>
+  `${groupId}:${pageIndex}`;
 
 export const getGroupPages = (
   group: Group,
   ticks: Record<string, boolean>,
   boundPages: Record<string, boolean>,
-  extraPageCount = 0
+  extraPageCount = 0,
 ): GroupPage[] => {
-  const naturalPageCount = Math.max(1, Math.ceil(group.items.length / PAGE_SIZE));
+  const naturalPageCount = Math.max(
+    1,
+    Math.ceil(group.items.length / PAGE_SIZE),
+  );
   const pageCount = Math.max(1, naturalPageCount + extraPageCount);
 
   const pages = Array.from({ length: pageCount }, (_, pageIndex) => {
-    const items = group.items.slice(pageIndex * PAGE_SIZE, (pageIndex + 1) * PAGE_SIZE);
+    const items = group.items.slice(
+      pageIndex * PAGE_SIZE,
+      (pageIndex + 1) * PAGE_SIZE,
+    );
     const key = getPageKey(group.id, pageIndex);
-    const isComplete = items.length > 0 && items.every((item) => !!ticks[item.id]);
+    const isComplete =
+      items.length > 0 && items.every((item) => !!ticks[item.id]);
 
     return {
       key,
@@ -271,17 +319,20 @@ export const getGroupPages = (
   return pages;
 };
 
-export const compressLocalGroup = (group: Group, ticks: Record<string, boolean>): CompactLocalGroup => {
+export const compressLocalGroup = (
+  group: Group,
+  ticks: Record<string, boolean>,
+): CompactLocalGroup => {
   const items: CompactLocalItem[] = [];
   group.items.forEach((item) => {
     const defaultIndex = DEFAULT_ITEM_INDEX_BY_ID[item.id];
-    if (item.origin.type === 'default' && defaultIndex !== undefined) {
+    if (item.origin.type === "default" && defaultIndex !== undefined) {
       items.push(defaultIndex);
       return;
     }
 
-    if (item.origin.type === 'external') {
-      items.push([item.id, item.text, item.origin.ownerId || 'unknown']);
+    if (item.origin.type === "external") {
+      items.push([item.id, item.text, item.origin.ownerId || "unknown"]);
       return;
     }
 
@@ -296,9 +347,12 @@ export const compressLocalGroup = (group: Group, ticks: Record<string, boolean>)
   };
 };
 
-export const decompressLocalGroup = (group: CompactLocalGroup, locale?: Locale) => {
+export const decompressLocalGroup = (
+  group: CompactLocalGroup,
+  locale?: Locale,
+) => {
   const items: ListItem[] = group.i.map((entry) => {
-    if (typeof entry === 'number') {
+    if (typeof entry === "number") {
       return createDefaultItem(DEFAULT_ITEMS[entry], entry);
     }
 
@@ -306,14 +360,14 @@ export const decompressLocalGroup = (group: CompactLocalGroup, locale?: Locale) 
       return {
         id: entry[0],
         text: entry[1],
-        origin: { type: 'external', ownerId: entry[2] },
+        origin: { type: "external", ownerId: entry[2] },
       };
     }
 
     return {
       id: entry[0],
       text: entry[1],
-      origin: { type: 'self' },
+      origin: { type: "self" },
     };
   });
 
@@ -326,14 +380,17 @@ export const decompressLocalGroup = (group: CompactLocalGroup, locale?: Locale) 
   return {
     group: {
       id: group.id,
-      title: group.id === DEFAULT_GROUP_ID ? getDefaultGroupTitle(locale) : group.n,
+      title:
+        group.id === DEFAULT_GROUP_ID ? getDefaultGroupTitle(locale) : group.n,
       items,
     },
     ticks,
   };
 };
 
-export const toCompactLocalState = (state: PersistedAppState): CompactLocalState => ({
+export const toCompactLocalState = (
+  state: PersistedAppState,
+): CompactLocalState => ({
   v: 6,
   a: state.activeGroupId,
   c: [state.nextGroupId.toString(36), state.nextItemId.toString(36)],
@@ -345,124 +402,171 @@ export const toCompactLocalState = (state: PersistedAppState): CompactLocalState
 });
 
 export const serializeCompactLocalItem = (item: CompactLocalItem) => {
-  if (typeof item === 'number') return `d${item.toString(36)}`;
-  if (item.length === 3) return `e${item[0]}${ITEM_FIELD_SEP}${escapeCompact(item[1])}${ITEM_FIELD_SEP}${item[2]}`;
+  if (typeof item === "number") return `d${item.toString(36)}`;
+  if (item.length === 3)
+    return `e${item[0]}${ITEM_FIELD_SEP}${escapeCompact(item[1])}${ITEM_FIELD_SEP}${item[2]}`;
   return `s${item[0]}${ITEM_FIELD_SEP}${escapeCompact(item[1])}`;
 };
 
 export const parseCompactLocalItem = (raw: string): CompactLocalItem => {
   const type = raw[0];
   const body = raw.slice(1);
-  if (type === 'd') return parseInt(body, 36);
+  if (type === "d") return parseInt(body, 36);
   const parts = splitEscaped(body, ITEM_FIELD_SEP);
-  if (type === 'e') return [parts[0], parts[1] ?? '', parts[2] ?? 'unknown'];
-  return [parts[0], parts[1] ?? ''];
+  if (type === "e") return [parts[0], parts[1] ?? "", parts[2] ?? "unknown"];
+  return [parts[0], parts[1] ?? ""];
 };
 
 export const serializeCompactLocalState = (state: CompactLocalState) => {
-  const groups = state.g.map((group) => {
-    const items = group.i.map(serializeCompactLocalItem).join(ITEM_SEP);
-    return [
-      group.id,
-      escapeCompact(group.n),
-      group.t,
-      items,
-    ].join(GROUP_FIELD_SEP);
-  }).join(GROUP_SEP);
+  const groups = state.g
+    .map((group) => {
+      const items = group.i.map(serializeCompactLocalItem).join(ITEM_SEP);
+      return [group.id, escapeCompact(group.n), group.t, items].join(
+        GROUP_FIELD_SEP,
+      );
+    })
+    .join(GROUP_SEP);
 
   const extraPages = (state.p ?? [])
     .map(([groupId, count]) => `${groupId}${GROUP_FIELD_SEP}${count}`)
     .join(GROUP_SEP);
 
-  return ['L6', state.a, state.c[0], state.c[1], state.b.map(escapeCompact).join(GROUP_SEP), extraPages, groups].join(TOP_SEP);
+  return [
+    "L6",
+    state.a,
+    state.c[0],
+    state.c[1],
+    state.b.map(escapeCompact).join(GROUP_SEP),
+    extraPages,
+    groups,
+  ].join(TOP_SEP);
 };
 
-export const parseCompactLocalState = (raw: string): CompactLocalState | null => {
+export const parseCompactLocalState = (
+  raw: string,
+): CompactLocalState | null => {
   const parts = splitEscaped(raw, TOP_SEP);
   const [version, activeGroupId, nextGroupId, nextItemId] = parts;
-  if (version !== 'L4' && version !== 'L5' && version !== 'L6') return null;
+  if (version !== "L4" && version !== "L5" && version !== "L6") return null;
 
-  const boundRaw = version === 'L5' || version === 'L6' ? (parts[4] ?? '') : '';
-  const extraPagesRaw = version === 'L6' ? (parts[5] ?? '') : '';
-  const groupsRaw = version === 'L6'
-    ? (parts[6] ?? '')
-    : version === 'L5'
-      ? (parts[5] ?? '')
-      : (parts[4] ?? '');
+  const boundRaw = version === "L5" || version === "L6" ? (parts[4] ?? "") : "";
+  const extraPagesRaw = version === "L6" ? (parts[5] ?? "") : "";
+  const groupsRaw =
+    version === "L6"
+      ? (parts[6] ?? "")
+      : version === "L5"
+        ? (parts[5] ?? "")
+        : (parts[4] ?? "");
 
   const groups = groupsRaw
-    ? splitEscaped(groupsRaw, GROUP_SEP).filter(Boolean).map((groupRaw) => {
-        const [id, title, ticks, itemsRaw = ''] = splitEscaped(groupRaw, GROUP_FIELD_SEP);
-        return {
-          id,
-          n: title ?? '',
-          t: ticks ?? '',
-          i: itemsRaw ? splitEscaped(itemsRaw, ITEM_SEP).filter(Boolean).map(parseCompactLocalItem) : [],
-        };
-      })
+    ? splitEscaped(groupsRaw, GROUP_SEP)
+        .filter(Boolean)
+        .map((groupRaw) => {
+          const [id, title, ticks, itemsRaw = ""] = splitEscaped(
+            groupRaw,
+            GROUP_FIELD_SEP,
+          );
+          return {
+            id,
+            n: title ?? "",
+            t: ticks ?? "",
+            i: itemsRaw
+              ? splitEscaped(itemsRaw, ITEM_SEP)
+                  .filter(Boolean)
+                  .map(parseCompactLocalItem)
+              : [],
+          };
+        })
     : [];
 
   return {
-    v: version === 'L6' ? 6 : version === 'L5' ? 5 : 4,
+    v: version === "L6" ? 6 : version === "L5" ? 5 : 4,
     a: activeGroupId,
-    c: [nextGroupId ?? '1', nextItemId ?? '0'],
+    c: [nextGroupId ?? "1", nextItemId ?? "0"],
     b: boundRaw ? splitEscaped(boundRaw, GROUP_SEP).filter(Boolean) : [],
     p: extraPagesRaw
       ? splitEscaped(extraPagesRaw, GROUP_SEP)
           .filter(Boolean)
           .map((entry) => {
             const [groupId, count] = splitEscaped(entry, GROUP_FIELD_SEP);
-            return [groupId, count ?? '0'] as [string, string];
+            return [groupId, count ?? "0"] as [string, string];
           })
       : [],
     g: groups,
   };
 };
 
-export const fromCompactLocalState = (state: CompactLocalState, locale?: Locale): PersistedAppState => {
-  const groups = state.g.map((group) => decompressLocalGroup(group, locale).group);
+export const fromCompactLocalState = (
+  state: CompactLocalState,
+  locale?: Locale,
+): PersistedAppState => {
+  const groups = state.g.map(
+    (group) => decompressLocalGroup(group, locale).group,
+  );
   const ticks = state.g.reduce<Record<string, boolean>>((acc, group) => {
     Object.assign(acc, decompressLocalGroup(group, locale).ticks);
     return acc;
   }, {});
 
-  return normalizeState({
-    v: 6,
-    groups,
-    ticks,
-    boundPages: Object.fromEntries(state.b.map((key) => [key, true])),
-    extraPageCounts: Object.fromEntries(
-      (state.p ?? []).map(([groupId, count]) => [groupId, parseInt(count, 36) || 0])
-    ),
-    activeGroupId: state.a,
-    nextGroupId: parseInt(state.c?.[0] ?? '1', 36),
-    nextItemId: parseInt(state.c?.[1] ?? '0', 36),
-  }, locale);
+  return normalizeState(
+    {
+      v: 6,
+      groups,
+      ticks,
+      boundPages: Object.fromEntries(state.b.map((key) => [key, true])),
+      extraPageCounts: Object.fromEntries(
+        (state.p ?? []).map(([groupId, count]) => [
+          groupId,
+          parseInt(count, 36) || 0,
+        ]),
+      ),
+      activeGroupId: state.a,
+      nextGroupId: parseInt(state.c?.[0] ?? "1", 36),
+      nextItemId: parseInt(state.c?.[1] ?? "0", 36),
+    },
+    locale,
+  );
 };
 
 export const serializeEncryptedPayload = (iv: Uint8Array, data: Uint8Array) =>
-  ['E6', encodeBase64(iv), encodeBase64(data)].join(TOP_SEP);
+  ["E6", encodeBase64(iv), encodeBase64(data)].join(TOP_SEP);
 
 export const parseEncryptedPayload = (raw: string) => {
   const [version, iv, data] = splitEscaped(raw, TOP_SEP);
-  if ((version !== 'E4' && version !== 'E5' && version !== 'E6') || !iv || !data) return null;
+  if (
+    (version !== "E4" && version !== "E5" && version !== "E6") ||
+    !iv ||
+    !data
+  )
+    return null;
   return { iv, data };
 };
 
-export const encryptState = async (state: PersistedAppState, userId: string) => {
+export const encryptState = async (
+  state: PersistedAppState,
+  userId: string,
+) => {
   const key = await getEncryptionKey(userId);
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const compactState = toCompactLocalState(state);
-  const encoded = new TextEncoder().encode(serializeCompactLocalState(compactState));
-  const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, encoded);
+  const encoded = new TextEncoder().encode(
+    serializeCompactLocalState(compactState),
+  );
+  const encrypted = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv },
+    key,
+    encoded,
+  );
 
-  return LZString.compressToEncodedURIComponent(serializeEncryptedPayload(iv, new Uint8Array(encrypted)));
+  return LZString.compressToEncodedURIComponent(
+    serializeEncryptedPayload(iv, new Uint8Array(encrypted)),
+  );
 };
 
 export const decryptState = async (
   value: string,
   userId: string,
-  locale?: Locale
+  locale?: Locale,
 ): Promise<PersistedAppState | null> => {
   try {
     const decoded = LZString.decompressFromEncodedURIComponent(value) ?? value;
@@ -471,32 +575,40 @@ export const decryptState = async (
 
     const key = await getEncryptionKey(userId);
     const decrypted = await crypto.subtle.decrypt(
-      { name: 'AES-GCM', iv: decodeBase64(payload.iv) },
+      { name: "AES-GCM", iv: decodeBase64(payload.iv) },
       key,
-      decodeBase64(payload.data)
+      decodeBase64(payload.data),
     );
-    const compactState = parseCompactLocalState(new TextDecoder().decode(decrypted));
+    const compactState = parseCompactLocalState(
+      new TextDecoder().decode(decrypted),
+    );
     return compactState ? fromCompactLocalState(compactState, locale) : null;
   } catch (error) {
-    console.error('Failed to decrypt local state', error);
+    console.error("Failed to decrypt local state", error);
     return null;
   }
 };
 
-export const compressGroup = (group: Group, ticks: Record<string, boolean>, ownerId: string): SharedGroupData => {
-  const compressedItems: SharedGroupData['i'] = [];
+export const compressGroup = (
+  group: Group,
+  ticks: Record<string, boolean>,
+  ownerId: string,
+): SharedGroupData => {
+  const compressedItems: SharedGroupData["i"] = [];
   let rangeStart = -1;
   let lastIndex = -1;
 
   const flushRange = () => {
     if (rangeStart === -1) return;
-    compressedItems.push(rangeStart === lastIndex ? rangeStart : [rangeStart, lastIndex]);
+    compressedItems.push(
+      rangeStart === lastIndex ? rangeStart : [rangeStart, lastIndex],
+    );
     rangeStart = -1;
   };
 
   group.items.forEach((item) => {
     const defaultIndex = DEFAULT_ITEM_INDEX_BY_ID[item.id];
-    if (item.origin.type === 'default' && defaultIndex !== undefined) {
+    if (item.origin.type === "default" && defaultIndex !== undefined) {
       if (rangeStart === -1) {
         rangeStart = defaultIndex;
         lastIndex = defaultIndex;
@@ -526,51 +638,65 @@ export const compressGroup = (group: Group, ticks: Record<string, boolean>, owne
   };
 };
 
-export const serializeSharedItem = (item: SharedGroupData['i'][number]) => {
-  if (typeof item === 'number') return `d${item.toString(36)}`;
-  if (typeof item[0] === 'number' && typeof item[1] === 'number') {
+export const serializeSharedItem = (item: SharedGroupData["i"][number]) => {
+  if (typeof item === "number") return `d${item.toString(36)}`;
+  if (typeof item[0] === "number" && typeof item[1] === "number") {
     return `r${item[0].toString(36)}${ITEM_FIELD_SEP}${item[1].toString(36)}`;
   }
   const customItem = item as [string, string];
   return `c${customItem[0]}${ITEM_FIELD_SEP}${escapeCompact(customItem[1])}`;
 };
 
-export const parseSharedItem = (raw: string): SharedGroupData['i'][number] => {
+export const parseSharedItem = (raw: string): SharedGroupData["i"][number] => {
   const type = raw[0];
   const body = raw.slice(1);
-  if (type === 'd') return parseInt(body, 36);
+  if (type === "d") return parseInt(body, 36);
   const parts = splitEscaped(body, ITEM_FIELD_SEP);
-  if (type === 'r') return [parseInt(parts[0], 36), parseInt(parts[1], 36)];
-  return [parts[0], parts[1] ?? ''];
+  if (type === "r") return [parseInt(parts[0], 36), parseInt(parts[1], 36)];
+  return [parts[0], parts[1] ?? ""];
 };
 
 export const serializeSharedGroupData = (data: SharedGroupData) => {
   const items = data.i.map(serializeSharedItem).join(ITEM_SEP);
-  return ['S5', data.o, data.g, escapeCompact(data.n), data.t, items].join(TOP_SEP);
+  return ["S5", data.o, data.g, escapeCompact(data.n), data.t, items].join(
+    TOP_SEP,
+  );
 };
 
 export const parseSharedGroupData = (raw: string): SharedGroupData | null => {
-  const [version, ownerId, groupId, name, ticks, itemsRaw = ''] = splitEscaped(raw, TOP_SEP);
-  if (version !== 'S5') return null;
+  const [version, ownerId, groupId, name, ticks, itemsRaw = ""] = splitEscaped(
+    raw,
+    TOP_SEP,
+  );
+  if (version !== "S5") return null;
   return {
     v: 5,
     o: ownerId,
     g: groupId,
-    n: name ?? '',
-    t: ticks ?? '',
-    i: itemsRaw ? splitEscaped(itemsRaw, ITEM_SEP).filter(Boolean).map(parseSharedItem) : [],
+    n: name ?? "",
+    t: ticks ?? "",
+    i: itemsRaw
+      ? splitEscaped(itemsRaw, ITEM_SEP).filter(Boolean).map(parseSharedItem)
+      : [],
   };
 };
 
-export const decompressSharedGroup = (data: SharedGroupData, locale?: Locale): ImportedGroupPayload => {
+export const decompressSharedGroup = (
+  data: SharedGroupData,
+  locale?: Locale,
+): ImportedGroupPayload => {
   const items: ListItem[] = [];
   data.i.forEach((entry) => {
-    if (typeof entry === 'number') {
+    if (typeof entry === "number") {
       items.push(createDefaultItem(DEFAULT_ITEMS[entry], entry));
       return;
     }
 
-    if (Array.isArray(entry) && typeof entry[0] === 'number' && typeof entry[1] === 'number') {
+    if (
+      Array.isArray(entry) &&
+      typeof entry[0] === "number" &&
+      typeof entry[1] === "number"
+    ) {
       for (let index = entry[0]; index <= entry[1]; index += 1) {
         items.push(createDefaultItem(DEFAULT_ITEMS[index], index));
       }
@@ -581,7 +707,10 @@ export const decompressSharedGroup = (data: SharedGroupData, locale?: Locale): I
     items.push({
       id: customEntry[0],
       text: customEntry[1],
-      origin: { type: 'external', ownerId: getOwnerIdFromScopedId(customEntry[0]) || data.o || 'unknown' },
+      origin: {
+        type: "external",
+        ownerId: getOwnerIdFromScopedId(customEntry[0]) || data.o || "unknown",
+      },
     });
   });
 
@@ -593,7 +722,7 @@ export const decompressSharedGroup = (data: SharedGroupData, locale?: Locale): I
 
   return {
     group: {
-      id: data.g || createOwnedId(data.o || 'ext', 0),
+      id: data.g || createOwnedId(data.o || "ext", 0),
       title: data.n || getImportedGroupTitle(locale),
       items,
     },
@@ -601,7 +730,10 @@ export const decompressSharedGroup = (data: SharedGroupData, locale?: Locale): I
   };
 };
 
-export const parseSharedPayload = (key: string, locale?: Locale): ImportedGroupPayload | null => {
+export const parseSharedPayload = (
+  key: string,
+  locale?: Locale,
+): ImportedGroupPayload | null => {
   try {
     const decoded = LZString.decompressFromEncodedURIComponent(key);
     if (!decoded) return null;
@@ -610,13 +742,15 @@ export const parseSharedPayload = (key: string, locale?: Locale): ImportedGroupP
     if (!parsed || parsed.v !== 5) return null;
     return decompressSharedGroup(parsed, locale);
   } catch (error) {
-    console.error('Failed to decode shared key', error);
+    console.error("Failed to decode shared key", error);
     return null;
   }
 };
 
 export const mergeImportedGroup = (groups: Group[], importedGroup: Group) => {
-  const existingIndex = groups.findIndex((group) => group.id === importedGroup.id);
+  const existingIndex = groups.findIndex(
+    (group) => group.id === importedGroup.id,
+  );
   if (existingIndex === -1) {
     return [...groups, cloneGroup(importedGroup)];
   }
@@ -641,7 +775,13 @@ export const mergeImportedGroup = (groups: Group[], importedGroup: Group) => {
   return nextGroups;
 };
 
-export const generateShareKey = (group: Group, ticks: Record<string, boolean>, ownerId: string) => {
+export const generateShareKey = (
+  group: Group,
+  ticks: Record<string, boolean>,
+  ownerId: string,
+) => {
   const payload = compressGroup(group, ticks, ownerId);
-  return LZString.compressToEncodedURIComponent(serializeSharedGroupData(payload));
+  return LZString.compressToEncodedURIComponent(
+    serializeSharedGroupData(payload),
+  );
 };

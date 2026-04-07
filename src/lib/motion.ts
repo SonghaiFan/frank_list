@@ -1,5 +1,5 @@
 export const layoutSpring = {
-  type: 'spring',
+  type: "spring",
   stiffness: 340,
   damping: 32,
 } as const;
@@ -15,7 +15,7 @@ export const overlayTransition = {
 } as const;
 
 export const sheetTransition = {
-  type: 'spring',
+  type: "spring",
   stiffness: 320,
   damping: 28,
 } as const;

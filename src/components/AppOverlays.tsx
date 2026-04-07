@@ -1,8 +1,8 @@
-import { AnimatePresence, motion } from 'motion/react';
-import { QRCodeCanvas } from 'qrcode.react';
-import { ModalDialog } from '@/components/ModalDialog';
-import { overlayTransition, sheetTransition } from '@/lib/motion';
-import type { UIOverlay } from '@/stores/ui-store';
+import { AnimatePresence, motion } from "motion/react";
+import { QRCodeCanvas } from "qrcode.react";
+import { ModalDialog } from "@/components/ModalDialog";
+import { overlayTransition, sheetTransition } from "@/lib/motion";
+import type { UIOverlay } from "@/stores/ui-store";
 
 interface AppOverlaysProps {
   closeLabel: string;
@@ -37,8 +37,13 @@ export function AppOverlays({
 }: AppOverlaysProps) {
   return (
     <AnimatePresence initial={false} mode="wait">
-      {overlay === 'reset-confirm' ? (
-        <ModalDialog key="reset-confirm" title={resetTitle} body={resetBody} onClose={closeOverlay}>
+      {overlay === "reset-confirm" ? (
+        <ModalDialog
+          key="reset-confirm"
+          title={resetTitle}
+          body={resetBody}
+          onClose={closeOverlay}
+        >
           <div className="flex gap-3">
             <button
               onClick={closeOverlay}
@@ -54,8 +59,13 @@ export function AppOverlays({
             </button>
           </div>
         </ModalDialog>
-      ) : overlay === 'delete-group-confirm' ? (
-        <ModalDialog key="delete-group-confirm" title={deleteTitle} body={deleteBody} onClose={closeOverlay}>
+      ) : overlay === "delete-group-confirm" ? (
+        <ModalDialog
+          key="delete-group-confirm"
+          title={deleteTitle}
+          body={deleteBody}
+          onClose={closeOverlay}
+        >
           <div className="flex gap-3">
             <button
               onClick={closeOverlay}
@@ -71,7 +81,7 @@ export function AppOverlays({
             </button>
           </div>
         </ModalDialog>
-      ) : overlay === 'qr' ? (
+      ) : overlay === "qr" ? (
         <motion.div
           key="qr"
           initial={{ opacity: 0 }}

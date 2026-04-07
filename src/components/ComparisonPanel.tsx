@@ -1,8 +1,8 @@
-import { motion } from 'motion/react';
-import type { Group, ListItem } from '@/lib/notebook-types';
-import { cn } from '@/lib/cn';
-import { useI18n } from '@/hooks/useI18n';
-import { layoutSpring } from '@/lib/motion';
+import { motion } from "motion/react";
+import type { Group, ListItem } from "@/lib/notebook-types";
+import { cn } from "@/lib/cn";
+import { useI18n } from "@/hooks/useI18n";
+import { layoutSpring } from "@/lib/motion";
 
 interface ComparisonPanelProps {
   comparison: {
@@ -25,35 +25,61 @@ export function ComparisonPanel({ comparison, group }: ComparisonPanelProps) {
     >
       <div className="paper-lines">
         <div className="paper-content pt-3">
-          <div className="mb-4 border-b border-neutral-100 on-lines">
-            <div className="ui-label text-klein">{t('comparison.title')}</div>
+          <div className="on-lines mb-4 border-b border-neutral-100">
+            <div className="ui-label text-klein">{t("comparison.title")}</div>
             <div className="list-text">{group.title}</div>
           </div>
-          <ResultSection title={t('comparison.bothDone')} items={comparison.bothDone} color="bg-klein" />
-          <ResultSection title={t('comparison.iDoneHeNot')} items={comparison.iDoneHeNot} color="bg-neutral-800" />
-          <ResultSection title={t('comparison.heDoneINot')} items={comparison.heDoneINot} color="bg-neutral-400" />
-          <ResultSection title={t('comparison.bothNotDone')} items={comparison.bothNotDone} color="bg-neutral-200" />
+          <ResultSection
+            title={t("comparison.bothDone")}
+            items={comparison.bothDone}
+            color="bg-klein"
+          />
+          <ResultSection
+            title={t("comparison.iDoneHeNot")}
+            items={comparison.iDoneHeNot}
+            color="bg-neutral-800"
+          />
+          <ResultSection
+            title={t("comparison.heDoneINot")}
+            items={comparison.heDoneINot}
+            color="bg-neutral-400"
+          />
+          <ResultSection
+            title={t("comparison.bothNotDone")}
+            items={comparison.bothNotDone}
+            color="bg-neutral-200"
+          />
         </div>
       </div>
     </motion.div>
   );
 }
 
-function ResultSection({ title, items, color }: { title: string; items: ListItem[]; color: string }) {
+function ResultSection({
+  title,
+  items,
+  color,
+}: {
+  title: string;
+  items: ListItem[];
+  color: string;
+}) {
   if (items.length === 0) return null;
 
   return (
     <div className="mb-4">
-      <h3 className="flex items-center gap-3 border-b border-neutral-100 on-lines">
-        <div className={cn('w-1.5 h-4 rounded-full', color)} />
+      <h3 className="on-lines flex items-center gap-3 border-b border-neutral-100">
+        <div className={cn("h-4 w-1.5 rounded-full", color)} />
         <span className="ui-label text-neutral-400">{title}</span>
         <span className="ui-mono ml-auto">[{items.length}]</span>
       </h3>
       <ul className="space-y-0">
         {items.map((item) => (
           <li key={item.id} className="flex items-center gap-3">
-            <span className="w-1 h-1 rounded-full bg-neutral-200 shrink-0" />
-            <span className="list-text on-lines text-neutral-700 flex-1">{item.text}</span>
+            <span className="h-1 w-1 shrink-0 rounded-full bg-neutral-200" />
+            <span className="list-text on-lines flex-1 text-neutral-700">
+              {item.text}
+            </span>
           </li>
         ))}
       </ul>

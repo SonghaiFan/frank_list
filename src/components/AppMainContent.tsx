@@ -1,15 +1,19 @@
-import { AnimatePresence, LayoutGroup, motion } from 'motion/react';
-import { Notebook } from '@/components/Notebook';
-import { ComparisonPanel } from '@/components/ComparisonPanel';
-import { GroupWorkspace } from '@/components/GroupWorkspace';
-import { MobileGroupList } from '@/components/MobileGroupList';
-import { cn } from '@/lib/cn';
-import { layoutSpring, panelTransition } from '@/lib/motion';
-import { getPageCardHeight, PAGE_CARD_WIDTH_PX, PAGE_SIZE } from '@/lib/workspace-constants';
-import { useI18n } from '@/hooks/useI18n';
-import { useIsMobile } from '@/hooks/useIsMobile';
-import type { Group, GroupPage, ListItem } from '@/lib/notebook-types';
-import type { UIFlow } from '@/stores/ui-store';
+import { AnimatePresence, LayoutGroup, motion } from "motion/react";
+import { Notebook } from "@/components/Notebook";
+import { ComparisonPanel } from "@/components/ComparisonPanel";
+import { GroupWorkspace } from "@/components/GroupWorkspace";
+import { MobileGroupList } from "@/components/MobileGroupList";
+import { cn } from "@/lib/cn";
+import { layoutSpring, panelTransition } from "@/lib/motion";
+import {
+  getPageCardHeight,
+  PAGE_CARD_WIDTH_PX,
+  PAGE_SIZE,
+} from "@/lib/workspace-constants";
+import { useI18n } from "@/hooks/useI18n";
+import { useIsMobile } from "@/hooks/useIsMobile";
+import type { Group, GroupPage, ListItem } from "@/lib/notebook-types";
+import type { UIFlow } from "@/stores/ui-store";
 
 interface GalleryGroup {
   group: {
@@ -40,7 +44,10 @@ interface AppMainContentProps {
   onAddItem: () => void;
   onOpenGroupFromGallery: (groupId: string) => void;
   onRemoveItem: (itemId: string) => void;
-  onToggleTick: (itemId: string, e?: React.MouseEvent | React.ChangeEvent) => void;
+  onToggleTick: (
+    itemId: string,
+    e?: React.MouseEvent | React.ChangeEvent,
+  ) => void;
   stackPages: GroupPage[];
   ticks: Record<string, boolean>;
 }
@@ -154,7 +161,7 @@ export function AppMainContent({
             exit={viewTransition.exit}
             transition={panelTransition}
           >
-            {galleryGroups.map(({ group, pages }) => (
+            {galleryGroups.map(({ group, pages }) =>
               isMobile ? (
                 <button
                   key={group.id}
@@ -164,22 +171,22 @@ export function AppMainContent({
                   title={group.title}
                 >
                   <div className="paper-content px-4! py-0!">
-                    <div className="mx-auto flex min-h-18 w-full items-end justify-between gap-4 border-b border-[rgba(0,47,167,0.1)] pl-10 pr-2 pb-2">
+                    <div className="mx-auto flex min-h-18 w-full items-end justify-between gap-4 border-b border-[rgba(0,47,167,0.1)] pr-2 pb-2 pl-10">
                       <div className="min-w-0 flex-1">
                         <div className="list-text truncate text-lg leading-none font-medium tracking-tight text-neutral-800">
                           {group.title}
                         </div>
-                        <div className="ui-mono mt-2 text-[10px] uppercase tracking-[0.18em] text-neutral-400">
+                        <div className="ui-mono mt-2 text-[10px] tracking-[0.18em] text-neutral-400 uppercase">
                           {pages.length} pages
                         </div>
                       </div>
                       <div className="mb-px flex items-center gap-3">
                         <span className="text-klein text-xs font-medium tracking-wide">
                           {pages.every((page) => page.isBound)
-                            ? t('page.status.bound')
+                            ? t("page.status.bound")
                             : pages.every((page) => page.isComplete)
-                              ? t('page.status.complete')
-                              : t('page.status.pending')}
+                              ? t("page.status.complete")
+                              : t("page.status.pending")}
                         </span>
                       </div>
                     </div>
@@ -198,30 +205,45 @@ export function AppMainContent({
                   onToggleTick={onToggleTick}
                   onOpen={() => onOpenGroupFromGallery(group.id)}
                 />
-              )
-            ))}
+              ),
+            )}
 
             <motion.button
               type="button"
               layout="position"
               transition={{ layout: layoutSpring }}
-              style={isMobile ? {
-                width: '100%',
-                maxWidth: 360,
-                height: 72,
-              } : {
-                width: PAGE_CARD_WIDTH_PX,
-                height: pageCardHeight,
-                transformOrigin: 'top center',
-              }}
+              style={
+                isMobile
+                  ? {
+                      width: "100%",
+                      maxWidth: 360,
+                      height: 72,
+                    }
+                  : {
+                      width: PAGE_CARD_WIDTH_PX,
+                      height: pageCardHeight,
+                      transformOrigin: "top center",
+                    }
+              }
               className={cn(
-                'border-2 border-dashed border-neutral-200 flex flex-col items-center justify-center text-neutral-300 cursor-pointer hover:border-klein hover:text-klein hover:bg-klein/5 mixed-blend-multiply opacity-80 hover:opacity-100 transition-all origin-top',
-                isMobile ? 'rounded-[14px]' : 'rounded-[20px]'
+                "hover:border-klein hover:text-klein hover:bg-klein/5 mixed-blend-multiply flex origin-top cursor-pointer flex-col items-center justify-center border-2 border-dashed border-neutral-200 text-neutral-300 opacity-80 transition-all hover:opacity-100",
+                isMobile ? "rounded-[14px]" : "rounded-[20px]",
               )}
               onClick={onCreateGroup}
             >
-              <span className={cn('font-light', isMobile ? 'mb-1 text-2xl' : 'mb-4 text-5xl')}>+</span>
-              <span className={cn('font-bold', isMobile ? 'text-xs' : 'text-lg')}>{t('app.newNotebook')}</span>
+              <span
+                className={cn(
+                  "font-light",
+                  isMobile ? "mb-1 text-2xl" : "mb-4 text-5xl",
+                )}
+              >
+                +
+              </span>
+              <span
+                className={cn("font-bold", isMobile ? "text-xs" : "text-lg")}
+              >
+                {t("app.newNotebook")}
+              </span>
             </motion.button>
           </motion.section>
         )}

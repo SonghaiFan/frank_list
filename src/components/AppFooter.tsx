@@ -1,5 +1,5 @@
-import { Users } from 'lucide-react';
-import { useIsMobile } from '@/hooks/useIsMobile';
+import { Users } from "lucide-react";
+import { useIsMobile } from "@/hooks/useIsMobile";
 
 interface AppFooterProps {
   compareLabel: string;
@@ -28,7 +28,7 @@ export function AppFooter({
       {isCompareReviewFlow && !showStickyCompareCta && (
         <button
           onClick={onStartComparison}
-          className="px-12 py-4 bg-neutral-900 text-white rounded-full font-medium tracking-tight shadow-xl hover:bg-black transition-all flex items-center gap-3"
+          className="flex items-center gap-3 rounded-full bg-neutral-900 px-12 py-4 font-medium tracking-tight text-white shadow-xl transition-all hover:bg-black"
         >
           <Users size={18} />
           {compareLabel}
@@ -37,7 +37,7 @@ export function AppFooter({
       {showStickyCompareCta && (
         <>
           <div className="h-24" aria-hidden="true" />
-          <div className="fixed inset-x-0 bottom-0 z-50 px-3 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-3 md:hidden">
+          <div className="fixed inset-x-0 bottom-0 z-50 px-3 pt-3 pb-[calc(env(safe-area-inset-bottom)+12px)] md:hidden">
             <button
               onClick={onStartComparison}
               className="mx-auto flex w-full max-w-105 items-center justify-center gap-3 rounded-full bg-neutral-900 px-6 py-4 font-medium tracking-tight text-white shadow-[0_16px_40px_rgba(0,0,0,0.22)] transition-all hover:bg-black"
@@ -49,18 +49,18 @@ export function AppFooter({
         </>
       )}
       {isEditingFlow && (
-        <div className="mt-3 flex items-center gap-4 ui-mono opacity-55">
+        <div className="ui-mono mt-3 flex items-center gap-4 opacity-55">
           <span className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-klein" />
+            <span className="bg-klein h-1.5 w-1.5 rounded-full" />
             {legendSelf}
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+            <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
             {legendExternal}
           </span>
         </div>
       )}
-      <div className="mt-6 ui-mono opacity-20">{signature}</div>
+      <div className="ui-mono mt-6 opacity-20">{signature}</div>
     </footer>
   );
 }

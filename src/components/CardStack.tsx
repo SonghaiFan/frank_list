@@ -1,11 +1,11 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Plus } from 'lucide-react';
-import { motion } from 'motion/react';
-import type { AppMode, GroupPage } from '@/lib/notebook-types';
-import { cn } from '@/lib/cn';
-import { getPageCardHeight } from '@/lib/workspace-constants';
-import { PageCard } from '@/components/PageCard';
-import { useI18n } from '@/hooks/useI18n';
+import React, { useEffect, useRef, useState } from "react";
+import { Plus } from "lucide-react";
+import { motion } from "motion/react";
+import type { AppMode, GroupPage } from "@/lib/notebook-types";
+import { cn } from "@/lib/cn";
+import { getPageCardHeight } from "@/lib/workspace-constants";
+import { PageCard } from "@/components/PageCard";
+import { useI18n } from "@/hooks/useI18n";
 
 interface CardStackProps {
   className?: string;
@@ -21,15 +21,18 @@ interface CardStackProps {
   onBindPage?: (pageKey: string) => void;
   onItemTextChange?: (value: string) => void;
   onRemoveItem?: (itemId: string) => void;
-  onToggleTick?: (itemId: string, e?: React.MouseEvent | React.ChangeEvent) => void;
+  onToggleTick?: (
+    itemId: string,
+    e?: React.MouseEvent | React.ChangeEvent,
+  ) => void;
 }
 
 export function CardStack({
   className,
   interactive = true,
   allowAddItemInput = true,
-  mode = 'edit',
-  newItemText = '',
+  mode = "edit",
+  newItemText = "",
   pageSize,
   pages,
   ticks,
@@ -43,9 +46,11 @@ export function CardStack({
   const { t } = useI18n();
   const pageCardHeight = getPageCardHeight(pageSize);
   const stackStyle = {
-    ['--page-card-height' as string]: `${pageCardHeight}px`,
+    ["--page-card-height" as string]: `${pageCardHeight}px`,
   } satisfies React.CSSProperties;
-  const [focusedPageKey, setFocusedPageKey] = useState<string | null>(pages[0]?.key ?? null);
+  const [focusedPageKey, setFocusedPageKey] = useState<string | null>(
+    pages[0]?.key ?? null,
+  );
   const previousKeysRef = useRef<string[]>(pages.map((page) => page.key));
 
   useEffect(() => {
@@ -56,7 +61,9 @@ export function CardStack({
     }
 
     const nextKeys = pages.map((page) => page.key);
-    const newlyAddedKey = nextKeys.find((key) => !previousKeysRef.current.includes(key));
+    const newlyAddedKey = nextKeys.find(
+      (key) => !previousKeysRef.current.includes(key),
+    );
 
     setFocusedPageKey((currentKey) => {
       if (newlyAddedKey) return newlyAddedKey;
@@ -68,39 +75,53 @@ export function CardStack({
     previousKeysRef.current = nextKeys;
   }, [pages]);
 
-  const focusedPageIndex = pages.findIndex((page) => page.key === focusedPageKey);
+  const focusedPageIndex = pages.findIndex(
+    (page) => page.key === focusedPageKey,
+  );
   const safeFocusedPageIndex = focusedPageIndex === -1 ? 0 : focusedPageIndex;
   const currentPage = pages[safeFocusedPageIndex];
   const isLastPageFocused = safeFocusedPageIndex === pages.length - 1;
-  const isCurrentPageFull = currentPage ? currentPage.items.length >= pageSize : false;
-  const areAllPagesFull = pages.length > 0 && pages.every((page) => page.items.length >= pageSize);
-  const shouldShowAddItemInput = allowAddItemInput
-    && interactive
-    && mode === 'edit'
-    && isLastPageFocused
-    && !!currentPage
-    && !isCurrentPageFull;
+  const isCurrentPageFull = currentPage
+    ? currentPage.items.length >= pageSize
+    : false;
+  const areAllPagesFull =
+    pages.length > 0 && pages.every((page) => page.items.length >= pageSize);
+  const shouldShowAddItemInput =
+    allowAddItemInput &&
+    interactive &&
+    mode === "edit" &&
+    isLastPageFocused &&
+    !!currentPage &&
+    !isCurrentPageFull;
 
   const getStackClasses = (offset: number) => {
-    if (offset === 0) return 'translate-x-0 translate-y-0 scale-100 opacity-100';
-    if (offset === -1) return '-translate-x-[34%] translate-y-[14px] scale-[0.96] opacity-78 max-md:-translate-x-[20%] max-md:translate-y-[10px] max-md:scale-[0.97]';
-    if (offset === 1) return 'translate-x-[34%] translate-y-[14px] scale-[0.96] opacity-78 max-md:translate-x-[20%] max-md:translate-y-[10px] max-md:scale-[0.97]';
-    if (offset === -2) return '-translate-x-[47%] translate-y-[24px] scale-[0.93] opacity-48 max-md:-translate-x-[28%] max-md:translate-y-[18px] max-md:scale-[0.95]';
-    if (offset === 2) return 'translate-x-[47%] translate-y-[24px] scale-[0.93] opacity-48 max-md:translate-x-[28%] max-md:translate-y-[18px] max-md:scale-[0.95]';
-    return 'translate-x-0 translate-y-10 scale-[0.82] opacity-0 pointer-events-none';
+    if (offset === 0)
+      return "translate-x-0 translate-y-0 scale-100 opacity-100";
+    if (offset === -1)
+      return "-translate-x-[34%] translate-y-[14px] scale-[0.96] opacity-78 max-md:-translate-x-[20%] max-md:translate-y-[10px] max-md:scale-[0.97]";
+    if (offset === 1)
+      return "translate-x-[34%] translate-y-[14px] scale-[0.96] opacity-78 max-md:translate-x-[20%] max-md:translate-y-[10px] max-md:scale-[0.97]";
+    if (offset === -2)
+      return "-translate-x-[47%] translate-y-[24px] scale-[0.93] opacity-48 max-md:-translate-x-[28%] max-md:translate-y-[18px] max-md:scale-[0.95]";
+    if (offset === 2)
+      return "translate-x-[47%] translate-y-[24px] scale-[0.93] opacity-48 max-md:translate-x-[28%] max-md:translate-y-[18px] max-md:scale-[0.95]";
+    return "translate-x-0 translate-y-10 scale-[0.82] opacity-0 pointer-events-none";
   };
 
   return (
-    <div 
-      className={cn('relative flex h-[var(--page-card-height)] items-start justify-center overflow-visible', className)}
+    <div
+      className={cn(
+        "relative flex h-[var(--page-card-height)] items-start justify-center overflow-visible",
+        className,
+      )}
       style={stackStyle}
     >
       {areAllPagesFull && isLastPageFocused && (
         <button
           type="button"
           onClick={onAppendPage}
-          className="absolute top-[calc(var(--page-card-height)/2-24px)] right-0 z-20 flex h-12 min-w-12 items-center justify-center gap-1 rounded-full border-none bg-white/92 px-4 text-gray-900/85 shadow-[0_12px_26px_rgba(0,0,0,0.1)] transition-all hover:-translate-y-px hover:bg-white max-md:bottom-4.5 max-md:right-[calc(50%-58px)] max-md:top-auto"
-          title={t('stack.addPage')}
+          className="absolute top-[calc(var(--page-card-height)/2-24px)] right-0 z-20 flex h-12 min-w-12 items-center justify-center gap-1 rounded-full border-none bg-white/92 px-4 text-gray-900/85 shadow-[0_12px_26px_rgba(0,0,0,0.1)] transition-all hover:-translate-y-px hover:bg-white max-md:top-auto max-md:right-[calc(50%-58px)] max-md:bottom-4.5"
+          title={t("stack.addPage")}
         >
           <Plus size={18} />
         </button>
@@ -116,16 +137,18 @@ export function CardStack({
           <motion.div
             key={page.key}
             className={cn(
-              'absolute inset-x-0 top-0 mx-auto w-[550px] cursor-pointer transition-all duration-300 ease-out',
+              "absolute inset-x-0 top-0 mx-auto w-[550px] cursor-pointer transition-all duration-300 ease-out",
               // Removed drop-shadow to prevent shadow accumulation/darkening artifacts
-              isActive && 'is-active cursor-default',
-              isVisible ? getStackClasses(offset) : 'translate-x-0 translate-y-10 scale-[0.82] opacity-0 pointer-events-none'
+              isActive && "is-active cursor-default",
+              isVisible
+                ? getStackClasses(offset)
+                : "pointer-events-none translate-x-0 translate-y-10 scale-[0.82] opacity-0",
             )}
             style={{ zIndex: pages.length - absOffset }}
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: isVisible ? 1 : 0, y: 0 }}
             layout
-            transition={{ type: 'spring', stiffness: 260, damping: 28 }}
+            transition={{ type: "spring", stiffness: 260, damping: 28 }}
             onClick={() => setFocusedPageKey(page.key)}
           >
             <PageCard
