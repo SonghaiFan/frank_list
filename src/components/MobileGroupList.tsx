@@ -1,12 +1,11 @@
 import React from "react";
-import { Plus, X } from "lucide-react";
+import { Plus } from "lucide-react";
 import { cn } from "@/lib/cn";
 import type { Group } from "@/lib/notebook-types";
-import {
-  getMarkerStyle,
-  getOriginDotClassName,
-  getOriginLabel,
-} from "@/lib/notebook-ui";
+import { Card } from "@/components/ui/Card";
+import { CompareNotice } from "@/components/ui/CompareNotice";
+import { NotebookHeader } from "@/components/ui/NotebookHeader";
+import { NotebookListItem } from "@/components/ui/NotebookListItem";
 import { useI18n } from "@/hooks/useI18n";
 import type { UIFlow } from "@/stores/ui-store";
 
@@ -42,80 +41,36 @@ export function MobileGroupList({
   return (
     <div className={cn("w-full space-y-4", className)}>
       {isCompareReviewFlow && (
-        <div className="list-text border-klein/10 bg-klein/3 text-klein rounded-xl border px-5 py-4 font-bold shadow-[0_18px_40px_rgba(0,47,167,0.05)]">
+        <CompareNotice>
           {t("workspace.compareNotice")}
-        </div>
+        </CompareNotice>
       )}
 
-      <section className="hybrid-paper paper-lines mx-auto w-full">
+      <Card variant="paper" className="mx-auto w-full">
         <div className="paper-content px-5! pt-0! pb-6! sm:px-8!">
-          <div className="mx-auto flex min-h-18 w-full items-end justify-between gap-4 border-b border-[rgba(0,47,167,0.1)] pr-2 pb-2 pl-9">
-            <div className="min-w-0 flex-1">
-              <div className="list-text text-xl leading-none font-medium tracking-tight text-neutral-800">
-                {group.title}
-              </div>
-            </div>
-            <div className="ui-mono text-[10px] tracking-[0.18em] text-neutral-400 uppercase">
-              {group.items.length}
-            </div>
-          </div>
+          <NotebookHeader
+            inset="mobile"
+            title={group.title}
+            subtitle={String(group.items.length)}
+            className="pl-9"
+          />
 
           <ul className="pt-1 pl-12">
             {group.items.map((item) => {
               const checkboxId = `mobile-group-${group.id}-${item.id}`;
 
               return (
-                <li
+                <NotebookListItem
                   key={item.id}
-                  className="group relative flex items-center gap-2"
-                >
-                  <input
-                    id={checkboxId}
-                    type="checkbox"
-                    checked={!!ticks[item.id]}
-                    onChange={(event) => onToggleTick(item.id, event)}
-                    className="rams-checkbox absolute -left-12"
-                  />
-                  <label
-                    htmlFor={checkboxId}
-                    className="flex min-w-0 flex-1 cursor-pointer items-center gap-2"
-                  >
-                    <span
-                      className={cn(
-                        "list-text on-lines marker-text min-w-0 select-none",
-                        ticks[item.id] && "is-highlighted",
-                      )}
-                      style={getMarkerStyle(item.text)}
-                    >
-                      <span className="marker-stroke" aria-hidden="true" />
-                      <span
-                        className="marker-stroke marker-stroke-secondary"
-                        aria-hidden="true"
-                      />
-                      <span className="marker-label break-words">
-                        {item.text}
-                      </span>
-                    </span>
-                    {item.origin.type !== "default" && (
-                      <span
-                        className={cn(
-                          "h-1.5 w-1.5 shrink-0 rounded-full",
-                          getOriginDotClassName(item.origin),
-                        )}
-                        title={getOriginLabel(item.origin, locale)}
-                      />
-                    )}
-                  </label>
-                  {item.origin.type !== "default" && (
-                    <button
-                      type="button"
-                      onClick={() => onRemoveItem(item.id)}
-                      className="hover:text-klein relative z-10 ml-auto p-1 text-neutral-300 transition-colors"
-                    >
-                      <X size={16} />
-                    </button>
-                  )}
-                </li>
+                  checkboxId={checkboxId}
+                  checked={!!ticks[item.id]}
+                  checkboxOffsetClassName="-left-12"
+                  item={item}
+                  locale={locale}
+                  onRemove={onRemoveItem}
+                  onToggleTick={onToggleTick}
+                  showRemoveButton={true}
+                />
               );
             })}
           </ul>
@@ -132,7 +87,7 @@ export function MobileGroupList({
             />
           </div>
         </div>
-      </section>
+      </Card>
     </div>
   );
 }

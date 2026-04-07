@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from "motion/react";
 import { QRCodeCanvas } from "qrcode.react";
 import { ModalDialog } from "@/components/ModalDialog";
+import { AppButton } from "@/components/ui/AppButton";
 import { overlayTransition, sheetTransition } from "@/lib/motion";
 import type { UIOverlay } from "@/stores/ui-store";
 
@@ -45,18 +46,18 @@ export function AppOverlays({
           onClose={closeOverlay}
         >
           <div className="flex gap-3">
-            <button
+            <AppButton
               onClick={closeOverlay}
-              className="flex-1 rounded-xl bg-neutral-100 py-3 font-medium text-neutral-600 transition-colors hover:bg-neutral-200"
+              variant="dialog-neutral"
             >
               {closeLabel}
-            </button>
-            <button
+            </AppButton>
+            <AppButton
               onClick={onReset}
-              className="flex-1 rounded-xl bg-red-500 py-3 font-medium text-white transition-colors hover:bg-red-600"
+              variant="dialog-danger"
             >
               {resetConfirm}
-            </button>
+            </AppButton>
           </div>
         </ModalDialog>
       ) : overlay === "delete-group-confirm" ? (
@@ -67,18 +68,18 @@ export function AppOverlays({
           onClose={closeOverlay}
         >
           <div className="flex gap-3">
-            <button
+            <AppButton
               onClick={closeOverlay}
-              className="flex-1 rounded-xl bg-neutral-100 py-3 font-medium text-neutral-600 transition-colors hover:bg-neutral-200"
+              variant="dialog-neutral"
             >
               {closeLabel}
-            </button>
-            <button
+            </AppButton>
+            <AppButton
               onClick={onDeleteGroup}
-              className="flex-1 rounded-xl bg-red-500 py-3 font-medium text-white transition-colors hover:bg-red-600"
+              variant="dialog-danger"
             >
               {deleteConfirm}
-            </button>
+            </AppButton>
           </div>
         </ModalDialog>
       ) : overlay === "qr" ? (

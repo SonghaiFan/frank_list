@@ -4,6 +4,15 @@ import { cn } from "@/lib/cn";
 import { useI18n } from "@/hooks/useI18n";
 import { layoutSpring } from "@/lib/motion";
 
+const resultToneClassMap = {
+  brand: "bg-brand",
+  muted: "bg-neutral-400",
+  strong: "bg-neutral-800",
+  subtle: "bg-neutral-200",
+} as const;
+
+type ResultTone = keyof typeof resultToneClassMap;
+
 interface ComparisonPanelProps {
   comparison: {
     bothDone: ListItem[];
@@ -32,22 +41,22 @@ export function ComparisonPanel({ comparison, group }: ComparisonPanelProps) {
           <ResultSection
             title={t("comparison.bothDone")}
             items={comparison.bothDone}
-            color="bg-klein"
+            tone="brand"
           />
           <ResultSection
             title={t("comparison.iDoneHeNot")}
             items={comparison.iDoneHeNot}
-            color="bg-neutral-800"
+            tone="strong"
           />
           <ResultSection
             title={t("comparison.heDoneINot")}
             items={comparison.heDoneINot}
-            color="bg-neutral-400"
+            tone="muted"
           />
           <ResultSection
             title={t("comparison.bothNotDone")}
             items={comparison.bothNotDone}
-            color="bg-neutral-200"
+            tone="subtle"
           />
         </div>
       </div>
@@ -58,18 +67,20 @@ export function ComparisonPanel({ comparison, group }: ComparisonPanelProps) {
 function ResultSection({
   title,
   items,
-  color,
+  tone,
 }: {
   title: string;
   items: ListItem[];
-  color: string;
+  tone: ResultTone;
 }) {
   if (items.length === 0) return null;
 
   return (
     <div className="mb-4">
       <h3 className="on-lines flex items-center gap-3 border-b border-neutral-100">
-        <div className={cn("h-4 w-1.5 rounded-full", color)} />
+        <div
+          className={cn("h-4 w-1.5 rounded-full", resultToneClassMap[tone])}
+        />
         <span className="ui-label text-neutral-400">{title}</span>
         <span className="ui-mono ml-auto">[{items.length}]</span>
       </h3>

@@ -5,6 +5,7 @@ import type { AppMode, GroupPage } from "@/lib/notebook-types";
 import { cn } from "@/lib/cn";
 import { getPageCardHeight } from "@/lib/workspace-constants";
 import { PageCard } from "@/components/PageCard";
+import { AppButton } from "@/components/ui/AppButton";
 import { useI18n } from "@/hooks/useI18n";
 
 interface CardStackProps {
@@ -117,14 +118,14 @@ export function CardStack({
       style={stackStyle}
     >
       {areAllPagesFull && isLastPageFocused && (
-        <button
-          type="button"
+        <AppButton
           onClick={onAppendPage}
-          className="absolute top-[calc(var(--page-card-height)/2-24px)] right-0 z-20 flex h-12 min-w-12 items-center justify-center gap-1 rounded-full border-none bg-white/92 px-4 text-gray-900/85 shadow-[0_12px_26px_rgba(0,0,0,0.1)] transition-all hover:-translate-y-px hover:bg-white max-md:top-auto max-md:right-[calc(50%-58px)] max-md:bottom-4.5"
+          variant="floating-pill"
+          className="absolute top-[calc(var(--page-card-height)/2-24px)] right-0 z-20 max-md:top-auto max-md:right-[calc(50%-58px)] max-md:bottom-4.5"
           title={t("stack.addPage")}
         >
           <Plus size={18} />
-        </button>
+        </AppButton>
       )}
 
       {pages.map((page, index) => {

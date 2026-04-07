@@ -23,7 +23,7 @@ export const CardCover = forwardRef<HTMLDivElement, CardCoverProps>(
       <motion.div
         ref={ref}
         className={cn(
-          "hybrid-paper mx-auto flex flex-col items-center justify-center bg-[#F7F7F9] text-center",
+          "hybrid-paper bg-surface-page mx-auto flex flex-col items-center justify-center text-center",
           className,
         )}
         style={{ width: `${PAGE_CARD_WIDTH_PX}px`, height: `${cardHeight}px` }}

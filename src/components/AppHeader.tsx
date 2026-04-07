@@ -7,7 +7,7 @@ import {
   RotateCcw,
   Share2,
 } from "lucide-react";
-import { cn } from "@/lib/cn";
+import { AppButton } from "@/components/ui/AppButton";
 import { useI18n } from "@/hooks/useI18n";
 import type { UIFlow } from "@/stores/ui-store";
 
@@ -31,8 +31,6 @@ export function AppHeader({
   onTogglePrimaryView,
 }: AppHeaderProps) {
   const { t, toggleLocale } = useI18n();
-  const circleButtonClass =
-    "flex h-10 w-10 items-center justify-center rounded-full border border-neutral-200 bg-white text-[#666] transition-all hover:-translate-y-px hover:border-klein hover:text-klein cursor-pointer";
   const isGalleryFlow = flow === "gallery";
   const isEditingFlow = flow === "workspace" || flow === "gallery";
   const isComparisonFlow =
@@ -52,13 +50,9 @@ export function AppHeader({
       </div>
 
       <div className="flex gap-3">
-        <button
+        <AppButton
           onClick={onTogglePrimaryView}
-          className={cn(
-            circleButtonClass,
-            isGalleryFlow &&
-              "bg-klein hover:bg-klein border-transparent text-white hover:text-white",
-          )}
+          variant={isGalleryFlow ? "icon-active" : "icon-default"}
           title={
             isGalleryFlow
               ? t("header.openStackView")
@@ -66,56 +60,53 @@ export function AppHeader({
           }
         >
           <Menu size={18} />
-        </button>
+        </AppButton>
 
         {isComparisonFlow && (
-          <button
+          <AppButton
             onClick={onBack}
-            className={circleButtonClass}
+            variant="icon-default"
             title={t("header.backToEdit")}
           >
             <ArrowLeft size={18} />
-          </button>
+          </AppButton>
         )}
 
         {isEditingFlow && (
-          <button
+          <AppButton
             onClick={onReset}
-            className={cn(circleButtonClass, "text-neutral-300")}
+            variant="icon-default"
+            className="text-neutral-300"
             title={t("header.reset")}
           >
             <RotateCcw size={18} />
-          </button>
+          </AppButton>
         )}
         {isEditingFlow && (
-          <button
+          <AppButton
             onClick={onShowQrCode}
-            className={circleButtonClass}
+            variant="icon-default"
             title={t("header.qrCode")}
           >
             <QrCode size={18} />
-          </button>
+          </AppButton>
         )}
         {isEditingFlow && (
-          <button
+          <AppButton
             onClick={onCopy}
-            className={cn(
-              circleButtonClass,
-              copySuccess &&
-                "bg-klein hover:bg-klein border-transparent text-white hover:text-white",
-            )}
+            variant={copySuccess ? "icon-active" : "icon-default"}
             title={t("header.shareLink")}
           >
             {copySuccess ? <Check size={18} /> : <Share2 size={18} />}
-          </button>
+          </AppButton>
         )}
-        <button
+        <AppButton
           onClick={toggleLocale}
-          className={circleButtonClass}
+          variant="icon-default"
           title={t("common.languageToggle")}
         >
           <span className="ui-mono text-xs">{t("common.languageToggle")}</span>
-        </button>
+        </AppButton>
       </div>
     </nav>
   );

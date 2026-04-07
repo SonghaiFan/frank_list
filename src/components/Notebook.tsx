@@ -14,6 +14,7 @@ import {
 import { PageCard } from "@/components/PageCard";
 import { CardCover } from "@/components/CardCover";
 import { CardEnd } from "@/components/CardEnd";
+import { AppButton } from "@/components/ui/AppButton";
 
 interface NotebookProps {
   disableLayoutAnimation?: boolean;
@@ -232,24 +233,24 @@ export function Notebook({
     >
       {!closed && allPages.length > 1 && (
         <>
-          <button
-            type="button"
+          <AppButton
             onClick={goPrevPage}
             disabled={!canGoPrev}
-            className="hover:border-klein hover:text-klein absolute top-[calc(var(--page-card-height)/2-24px)] left-4 z-50 flex h-12 w-12 items-center justify-center rounded-full border border-neutral-200 bg-white/80 text-[#666] shadow-[0_8px_16px_rgba(0,0,0,0.06)] backdrop-blur-sm transition-all hover:-translate-y-px disabled:cursor-not-allowed disabled:opacity-35"
+            variant="floating-icon"
+            className="absolute top-[calc(var(--page-card-height)/2-24px)] left-4 z-50"
             title={t("notebook.previousPage")}
           >
             <ArrowLeft size={20} />
-          </button>
-          <button
-            type="button"
+          </AppButton>
+          <AppButton
             onClick={goNextPage}
             disabled={!canGoNext}
-            className="hover:border-klein hover:text-klein absolute top-[calc(var(--page-card-height)/2-24px)] right-4 z-50 flex h-12 w-12 items-center justify-center rounded-full border border-neutral-200 bg-white/80 text-[#666] shadow-[0_8px_16px_rgba(0,0,0,0.06)] backdrop-blur-sm transition-all hover:-translate-y-px disabled:cursor-not-allowed disabled:opacity-35"
+            variant="floating-icon"
+            className="absolute top-[calc(var(--page-card-height)/2-24px)] right-4 z-50"
             title={t("notebook.nextPage")}
           >
             <ArrowRight size={20} />
-          </button>
+          </AppButton>
         </>
       )}
 

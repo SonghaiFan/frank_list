@@ -4,7 +4,12 @@
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", monospace;
-  --color-klein: #002fa7;
+  --color-brand: #002fa7;
+  --color-danger: #ef4444;
+  --color-danger-strong: #dc2626;
+  --color-ink-muted: #666666;
+  --color-klein: var(--color-brand);
+  --color-surface-page: #f7f7f9;
   --paper-rule-color: #f4f4f7;
 }
 

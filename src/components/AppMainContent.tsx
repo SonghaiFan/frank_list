@@ -3,8 +3,10 @@ import { Notebook } from "@/components/Notebook";
 import { ComparisonPanel } from "@/components/ComparisonPanel";
 import { GroupWorkspace } from "@/components/GroupWorkspace";
 import { MobileGroupList } from "@/components/MobileGroupList";
+import { GalleryNotebookCard } from "@/components/ui/GalleryNotebookCard";
 import { cn } from "@/lib/cn";
 import { layoutSpring, panelTransition } from "@/lib/motion";
+import { getGroupPageStatus } from "@/lib/page-status";
 import {
   getPageCardHeight,
   PAGE_CARD_WIDTH_PX,
@@ -163,35 +165,14 @@ export function AppMainContent({
           >
             {galleryGroups.map(({ group, pages }) =>
               isMobile ? (
-                <button
+                <GalleryNotebookCard
                   key={group.id}
-                  type="button"
-                  className="hybrid-paper paper-lines w-full max-w-90 cursor-pointer text-left transition-transform hover:-translate-y-px"
-                  onClick={() => onOpenGroupFromGallery(group.id)}
+                  onOpen={() => onOpenGroupFromGallery(group.id)}
+                  pages={pages}
+                  statusLabel={t(`page.status.${getGroupPageStatus(pages)}`)}
                   title={group.title}
-                >
-                  <div className="paper-content px-4! py-0!">
-                    <div className="mx-auto flex min-h-18 w-full items-end justify-between gap-4 border-b border-[rgba(0,47,167,0.1)] pr-2 pb-2 pl-10">
-                      <div className="min-w-0 flex-1">
-                        <div className="list-text truncate text-lg leading-none font-medium tracking-tight text-neutral-800">
-                          {group.title}
-                        </div>
-                        <div className="ui-mono mt-2 text-[10px] tracking-[0.18em] text-neutral-400 uppercase">
-                          {pages.length} pages
-                        </div>
-                      </div>
-                      <div className="mb-px flex items-center gap-3">
-                        <span className="text-klein text-xs font-medium tracking-wide">
-                          {pages.every((page) => page.isBound)
-                            ? t("page.status.bound")
-                            : pages.every((page) => page.isComplete)
-                              ? t("page.status.complete")
-                              : t("page.status.pending")}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </button>
+                  totalPagesLabel={`${pages.length} pages`}
+                />
               ) : (
                 <Notebook
                   key={group.id}
@@ -226,7 +207,7 @@ export function AppMainContent({
                     }
               }
               className={cn(
-                "hover:border-klein hover:text-klein hover:bg-klein/5 mixed-blend-multiply flex origin-top cursor-pointer flex-col items-center justify-center border-2 border-dashed border-neutral-200 text-neutral-300 opacity-80 transition-all hover:opacity-100",
+                "mixed-blend-multiply flex origin-top cursor-pointer flex-col items-center justify-center border-2 border-dashed border-neutral-200 text-neutral-300 opacity-80 transition-all hover:bg-brand/5 hover:text-brand hover:opacity-100 hover:border-brand",
                 isMobile ? "rounded-[14px]" : "rounded-[20px]",
               )}
               onClick={onCreateGroup}

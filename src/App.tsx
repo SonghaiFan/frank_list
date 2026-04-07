@@ -3,6 +3,7 @@ import { AppFooter } from "@/components/AppFooter";
 import { AppMainContent } from "@/components/AppMainContent";
 import { AppOverlays } from "@/components/AppOverlays";
 import { useAppViewModel } from "@/hooks/useAppViewModel";
+import { cn } from "@/lib/cn";
 import { motion } from "motion/react";
 
 export default function App() {
@@ -10,9 +11,10 @@ export default function App() {
 
   return (
     <div
-      className={`flex min-h-screen flex-col items-center p-3 transition-colors md:p-10 ${
-        vm.isWorkspaceFlow ? "cursor-zoom-out" : ""
-      }`}
+      className={cn(
+        "flex min-h-screen flex-col items-center p-3 transition-colors md:p-10",
+        vm.isWorkspaceFlow && "cursor-zoom-out",
+      )}
       onClick={() => {
         if (vm.flow === "workspace") vm.onTogglePrimaryView();
       }}

@@ -1,14 +1,12 @@
 import React from "react";
 import { motion } from "motion/react";
-import { Plus, X } from "lucide-react";
+import { Plus } from "lucide-react";
 import type { AppMode, GroupPage } from "@/lib/notebook-types";
 import { cn } from "@/lib/cn";
-import {
-  getMarkerStyle,
-  getOriginDotClassName,
-  getOriginLabel,
-} from "@/lib/notebook-ui";
+import { NotebookHeader } from "@/components/ui/NotebookHeader";
+import { NotebookListItem } from "@/components/ui/NotebookListItem";
 import { useI18n } from "@/hooks/useI18n";
+import { getPageStatus } from "@/lib/page-status";
 import {
   getPageCardHeight,
   PAGE_CARD_WIDTH_PX,
@@ -50,6 +48,8 @@ export function PageCard({
   const { locale, t } = useI18n();
   const cardRef = React.useRef<HTMLDivElement>(null);
   const cardHeight = getPageCardHeight(PAGE_ITEM_CAPACITY);
+  const status = getPageStatus(page);
+  const statusLabel = t(`page.status.${status}`);
 
   return (
     <motion.div
@@ -61,36 +61,12 @@ export function PageCard({
       transition={{ type: "spring", stiffness: 260, damping: 30 }}
     >
       <div className="paper-content flex h-full flex-col p-0!">
-        <motion.div
-          layout="position"
-          className="mx-auto flex h-18 w-full max-w-135 items-end justify-between gap-4 border-b border-[rgba(0,47,167,0.1)] pr-8 pb-2 pl-15"
-        >
-          <div className="min-w-0 flex-1">
-            <div className="list-text text-xl leading-none font-medium tracking-tight text-neutral-800">
-              {page.groupTitle}
-            </div>
-          </div>
-          <div className="mb-px flex items-center gap-3">
-            {page.isBound ? (
-              <motion.span
-                className="text-klein text-xs font-medium tracking-wide opacity-60"
-                layout="position"
-              >
-                {t("page.status.bound")}
-              </motion.span>
-            ) : page.isComplete ? (
-              <motion.span
-                className="text-klein text-xs font-medium tracking-wide"
-                layout="position"
-              >
-                {t("page.status.complete")}
-              </motion.span>
-            ) : (
-              <span className="text-xs font-medium tracking-wide text-neutral-300">
-                {t("page.status.pending")}
-              </span>
-            )}
-          </div>
+        <motion.div layout="position">
+          <NotebookHeader
+            title={page.groupTitle}
+            status={status}
+            statusLabel={statusLabel}
+          />
         </motion.div>
 
         <div className="flex-1 pt-0 pl-18">
@@ -101,64 +77,19 @@ export function PageCard({
               const checkboxId = `page-card-${page.key}-${item.id}`;
 
               return (
-                <li
+                <NotebookListItem
                   key={item.id}
-                  className="group relative flex items-center gap-2"
-                >
-                  <input
-                    id={checkboxId}
-                    type="checkbox"
-                    checked={!!ticks[item.id]}
-                    disabled={!interactive}
-                    onChange={(e) => onToggleTick?.(item.id, e)}
-                    className={cn(
-                      "rams-checkbox absolute -left-15",
-                      !interactive && "pointer-events-none cursor-default",
-                    )}
-                  />
-                  <label
-                    htmlFor={interactive ? checkboxId : undefined}
-                    className={cn(
-                      "flex flex-1 items-center gap-2",
-                      interactive && "cursor-pointer",
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        "list-text on-lines marker-text select-none",
-                        ticks[item.id] && "is-highlighted",
-                      )}
-                      style={getMarkerStyle(item.text)}
-                    >
-                      <span className="marker-stroke" aria-hidden="true" />
-                      <span
-                        className="marker-stroke marker-stroke-secondary"
-                        aria-hidden="true"
-                      />
-                      <span className="marker-label">{item.text}</span>
-                    </span>
-                    {item.origin.type !== "default" && (
-                      <span
-                        className={cn(
-                          "h-1.5 w-1.5 shrink-0 rounded-full",
-                          getOriginDotClassName(item.origin),
-                        )}
-                        title={getOriginLabel(item.origin, locale)}
-                      />
-                    )}
-                  </label>
-                  {interactive &&
-                    mode === "edit" &&
-                    item.origin.type !== "default" && (
-                      <button
-                        type="button"
-                        onClick={() => onRemoveItem?.(item.id)}
-                        className="hover:text-klein relative z-10 ml-auto p-1 text-neutral-300 opacity-0 transition-all group-hover:opacity-100"
-                      >
-                        <X size={16} />
-                      </button>
-                    )}
-                </li>
+                  checkboxId={checkboxId}
+                  checked={!!ticks[item.id]}
+                  checkboxOffsetClassName="-left-15"
+                  interactive={interactive}
+                  item={item}
+                  locale={locale}
+                  onRemove={onRemoveItem}
+                  onToggleTick={onToggleTick}
+                  showRemoveButton={interactive && mode === "edit"}
+                  showRemoveOnHover={true}
+                />
               );
             })}
           </motion.ul>

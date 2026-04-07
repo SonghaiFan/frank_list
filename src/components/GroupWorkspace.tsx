@@ -3,6 +3,7 @@ import { motion } from "motion/react";
 import type { Group, GroupPage } from "@/lib/notebook-types";
 import type { UIFlow } from "@/stores/ui-store";
 import { CardStack } from "@/components/CardStack";
+import { CompareNotice } from "@/components/ui/CompareNotice";
 import { useI18n } from "@/hooks/useI18n";
 import { layoutSpring } from "@/lib/motion";
 
@@ -58,11 +59,11 @@ export function GroupWorkspace({
         damping: 25,
         layout: layoutSpring,
       }}
-    >
+      >
       {isCompareReviewFlow && (
-        <div className="list-text border-klein/10 bg-klein/3 text-klein mb-5 rounded-xl border px-5 py-4 font-bold shadow-[0_18px_40px_rgba(0,47,167,0.05)]">
+        <CompareNotice className="mb-5">
           {t("workspace.compareNotice")}
-        </div>
+        </CompareNotice>
       )}
 
       <CardStack
